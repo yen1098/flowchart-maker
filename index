@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Flowchart Builder</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:#F0F2F5;height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+
+.toolbar{background:#1C1C1E;height:52px;display:flex;align-items:center;gap:4px;padding:0 14px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.35);z-index:200}
+.tg{display:flex;align-items:center;gap:4px;padding:0 8px;border-right:1px solid #3A3A3C}
+.tg:last-child{border-right:none}
+.tlabel{color:#636366;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:0 2px}
+.tbtn{background:transparent;border:1px solid transparent;border-radius:7px;color:#E5E5EA;font-size:12px;font-family:inherit;font-weight:500;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .12s}
+.tbtn:hover{background:#2C2C2E;border-color:#48484A}
+.tbtn.on{background:#0A84FF;border-color:#0A84FF;color:#fff}
+.sbtn{background:transparent;border:1px solid #3A3A3C;border-radius:6px;color:#E5E5EA;font-size:11px;font-family:inherit;font-weight:500;padding:5px 10px;cursor:pointer;transition:all .12s}
+.sbtn:hover{background:#2C2C2E;border-color:#636366}
+.sbtn.on{background:#1D3D6F;border-color:#0A84FF;color:#64ACFF}
+.spacer{flex:1}
+
+.wrap{flex:1;position:relative;overflow:hidden}
+.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,0,0,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.055) 1px,transparent 1px);background-size:24px 24px;pointer-events:none}
+
+svg#sv{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible}
+#nl{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+
+/* nodes */
+.node{position:absolute;pointer-events:all;cursor:default}
+.node .body{position:relative;padding:10px 16px;font-size:13px;font-weight:500;text-align:center;line-height:1.45;word-break:break-word;min-width:110px;max-width:260px;transition:box-shadow .12s}
+.node[data-s=step]     .body{background:#fff;border:2px solid #D1D5DB;border-radius:8px;color:#111}
+.node[data-s=decision] .body{background:#FFFBEB;border:2px solid #FCD34D;border-radius:8px;color:#92400E}
+.node[data-s=terminal] .body{background:#F0FDF4;border:2px solid #86EFAC;border-radius:50px;color:#166534}
+.node[data-s=action]   .body{background:#EFF6FF;border:2px solid #93C5FD;border-radius:8px;color:#1E40AF}
+.node.sel .body{box-shadow:0 0 0 3px #0A84FF;border-color:#0A84FF!important}
+.node:not(.sel) .body:hover{box-shadow:0 4px 14px rgba(0,0,0,.13)}
+
+/* inline text */
+.node span{outline:none;display:block;cursor:text;white-space:pre-wrap}
+
+/* ports */
+.port{position:absolute;width:14px;height:14px;background:#0A84FF;border:2.5px solid #fff;border-radius:50%;opacity:0;transition:opacity .12s;cursor:crosshair;pointer-events:all;z-index:10}
+.node:hover .port,.node.sel .port{opacity:1}
+.port:hover{opacity:1!important;transform:scale(1.3)}
+.port[data-p=t]{top:-7px;left:50%;transform:translateX(-50%)}
+.port[data-p=r]{right:-7px;top:50%;transform:translateY(-50%)}
+.port[data-p=b]{bottom:-7px;left:50%;transform:translateX(-50%)}
+.port[data-p=l]{left:-7px;top:50%;transform:translateY(-50%)}
+.port[data-p=t]:hover{transform:translateX(-50%) scale(1.3)}
+.port[data-p=b]:hover{transform:translateX(-50%) scale(1.3)}
+.port[data-p=r]:hover{transform:translateY(-50%) scale(1.3)}
+.port[data-p=l]:hover{transform:translateY(-50%) scale(1.3)}
+
+/* edge labels */
+.elabel{position:absolute;pointer-events:all;background:#fff;border:1px solid #D1D5DB;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:500;color:#374151;cursor:text;transform:translate(-50%,-50%);white-space:nowrap;outline:none;min-width:16px;text-align:center}
+
+/* hint */
+.hint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(28,28,30,.9);color:#E5E5EA;font-size:12px;padding:6px 16px;border-radius:20px;pointer-events:none;opacity:0;transition:opacity .2s;backdrop-filter:blur(8px)}
+.hint.show{opacity:1}
+
+/* export modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:#1C1C1E;border:1px solid #3A3A3C;border-radius:14px;padding:24px;width:540px;display:flex;flex-direction:column;gap:12px}
+.modal h3{color:#E5E5EA;font-size:14px}
+.modal textarea{background:#2C2C2E;border:1px solid #48484A;border-radius:8px;color:#E5E5EA;font-family:Menlo,monospace;font-size:12px;padding:12px;resize:none;outline:none;min-height:260px}
+.modal-btns{display:flex;gap:8px;justify-content:flex-end}
+.btn-pri{background:#0A84FF;border:none;border-radius:8px;color:#fff;font-family:inherit;font-size:13px;font-weight:500;padding:8px 18px;cursor:pointer}
+.btn-sec{background:#2C2C2E;border:1px solid #48484A;border-radius:8px;color:#E5E5EA;font-family:inherit;font-size:13px;padding:8px 18px;cursor:pointer}
+</style>
+</head>
+<body>
+
+<div class="toolbar">
+  <div class="tg">
+    <span class="tlabel">Mode</span>
+    <button class="tbtn on" id="bsel" onclick="setMode('sel')">
+      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2l9 4.5-4 1-1.5 4.5z" fill="currentColor"/></svg>Select
+    </button>
+    <button class="tbtn" id="bcon" onclick="setMode('con')">
+      <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M1 5h12M9 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Connect
+    </button>
+  </div>
+  <div class="tg">
+    <span class="tlabel">Add</span>
+    <button class="sbtn" onclick="addNode('step')">☐ Step</button>
+    <button class="sbtn" onclick="addNode('decision')">◇ Decision</button>
+    <button class="sbtn" onclick="addNode('terminal')">◯ Start/End</button>
+    <button class="sbtn" onclick="addNode('action')">▣ Action</button>
+  </div>
+  <div class="tg">
+    <span class="tlabel">Arrows</span>
+    <button class="sbtn on" id="e-curve" onclick="setEdge('curve')">Curved</button>
+    <button class="sbtn" id="e-elbow" onclick="setEdge('elbow')">Elbow</button>
+    <button class="sbtn" id="e-line" onclick="setEdge('line')">Straight</button>
+  </div>
+  <div class="spacer"></div>
+  <div class="tg">
+    <button class="tbtn" onclick="doExport()">↓ Export Mermaid</button>
+    <button class="tbtn" onclick="doClear()">✕ Clear</button>
+  </div>
+</div>
+
+<div class="wrap" id="wrap">
+  <div class="grid"></div>
+  <svg id="sv">
+    <defs>
+      <marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0,10 3.5,0 7" fill="#6B7280"/>
+      </marker>
+      <marker id="arr-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
+        <polygon points="0 0,10 3.5,0 7" fill="#0A84FF"/>
+      </marker>
+    </defs>
+  </svg>
+  <div id="nl"></div>
+</div>
+
+<div class="hint" id="hint">Delete / Backspace to remove · Esc to cancel</div>
+
+<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)closeModal()">
+  <div class="modal">
+    <h3>Mermaid code — paste into Notion</h3>
+    <textarea id="mout" readonly></textarea>
+    <div class="modal-btns">
+      <button class="btn-sec" onclick="closeModal()">Close</button>
+      <button class="btn-pri" id="copybtn" onclick="doCopy()">Copy to clipboard</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─── globals ───────────────────────────────────────────────────────────────
+let mode = 'sel';
+let edgeType = 'curve';
+let nid = 0, eid = 0;
+const nodes = {};   // id → {el, shape}
+const edges = [];   // {id,from,fp,to,tp,pathEl,lblEl}
+let selNode = null, selEdge = null;
+
+// drag state
+let drag = null; // {id, ox, oy}
+
+// connect state
+let conn = null; // {from, fp, pathEl}
+
+const sv   = document.getElementById('sv');
+const nl   = document.getElementById('nl');
+const wrap = document.getElementById('wrap');
+const hint = document.getElementById('hint');
+
+// ─── coordinate helpers ────────────────────────────────────────────────────
+function wrapRect(){ return wrap.getBoundingClientRect(); }
+
+function clientToWrap(cx,cy){
+  const r = wrapRect();
+  return {x: cx - r.left, y: cy - r.top};
+}
+
+// Get bounding rect of .body relative to wrap
+function bodyRect(id){
+  const r = nodes[id].el.querySelector('.body').getBoundingClientRect();
+  const wr = wrapRect();
+  return {
+    x: r.left - wr.left, y: r.top - wr.top,
+    w: r.width, h: r.height,
+    cx: r.left - wr.left + r.width/2,
+    cy: r.top  - wr.top  + r.height/2
+  };
+}
+
+function portPos(id, p){
+  const b = bodyRect(id);
+  if(p==='t') return {x: b.cx,       y: b.y};
+  if(p==='b') return {x: b.cx,       y: b.y + b.h};
+  if(p==='l') return {x: b.x,        y: b.cy};
+  if(p==='r') return {x: b.x + b.w,  y: b.cy};
+}
+
+// nearest port on a node to a point
+function nearestPort(id, x, y){
+  let best='t', bd=Infinity;
+  ['t','r','b','l'].forEach(p=>{
+    const pp=portPos(id,p);
+    const d=Math.hypot(x-pp.x, y-pp.y);
+    if(d<bd){bd=d;best=p;}
+  });
+  return best;
+}
+
+// snap: return {nodeId,port} if within 28px of any port on any node except exclude
+function snapPort(x, y, excludeId){
+  const SNAP = 28;
+  for(const id in nodes){
+    if(id===excludeId) continue;
+    for(const p of ['t','r','b','l']){
+      const pp = portPos(id,p);
+      if(Math.hypot(x-pp.x, y-pp.y) < SNAP) return {nodeId:id, port:p};
+    }
+  }
+  return null;
+}
+
+// ─── path computation ──────────────────────────────────────────────────────
+function makePath(p1, d1, p2, d2){
+  const {x:x1,y:y1}=p1, {x:x2,y:y2}=p2;
+  if(edgeType==='line') return `M${x1} ${y1} L${x2} ${y2}`;
+  if(edgeType==='elbow'){
+    const mx=(x1+x2)/2, my=(y1+y2)/2;
+    if(d1==='r'||d1==='l') return `M${x1} ${y1} H${mx} V${y2} H${x2}`;
+    return `M${x1} ${y1} V${my} H${x2} V${y2}`;
+  }
+  // bezier
+  const pull = Math.min(Math.max(Math.hypot(x2-x1,y2-y1)*0.45, 40), 160);
+  const c1x = d1==='r'?x1+pull : d1==='l'?x1-pull : x1;
+  const c1y = d1==='b'?y1+pull : d1==='t'?y1-pull : y1;
+  const c2x = d2==='l'?x2-pull : d2==='r'?x2+pull : x2;
+  const c2y = d2==='t'?y2-pull : d2==='b'?y2+pull : y2;
+  return `M${x1} ${y1} C${c1x} ${c1y} ${c2x} ${c2y} ${x2} ${y2}`;
+}
+
+// ─── refresh edges ─────────────────────────────────────────────────────────
+function refreshEdge(e){
+  if(!nodes[e.from]||!nodes[e.to]) return;
+  const p1 = portPos(e.from, e.fp);
+  const p2 = portPos(e.to,   e.tp);
+  const d  = makePath(p1, e.fp, p2, e.tp);
+  e.pathEl.setAttribute('d', d);
+  // label midpoint
+  const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+  e.lblEl.style.left = mx+'px';
+  e.lblEl.style.top  = my+'px';
+}
+
+function refreshAll(){ edges.forEach(refreshEdge); }
+
+// ─── add node ──────────────────────────────────────────────────────────────
+function addNode(shape, x, y, txt){
+  const id = 'n'+(++nid);
+  if(x===undefined){
+    x = wrap.clientWidth/2  - 70 + (Math.random()-.5)*60;
+    y = wrap.clientHeight/2 - 30 + (Math.random()-.5)*60;
+  }
+  const defaults = {step:'Step',decision:'Decision?',terminal:'Start / End',action:'Action'};
+
+  const el = document.createElement('div');
+  el.className = 'node';
+  el.dataset.id = id;
+  el.dataset.s  = shape;
+  el.style.left = x+'px';
+  el.style.top  = y+'px';
+  el.innerHTML  = `
+    <div class="body">
+      <span contenteditable="true" spellcheck="false">${txt||defaults[shape]}</span>
+    </div>
+    <div class="port" data-p="t" data-id="${id}"></div>
+    <div class="port" data-p="r" data-id="${id}"></div>
+    <div class="port" data-p="b" data-id="${id}"></div>
+    <div class="port" data-p="l" data-id="${id}"></div>`;
+
+  nl.appendChild(el);
+  nodes[id] = {el, shape};
+
+  // ── node mousedown: drag or click-select ──
+  el.querySelector('.body').addEventListener('mousedown', e=>{
+    if(e.target.tagName==='SPAN' && document.activeElement===e.target) return; // editing
+    e.preventDefault();
+    e.stopPropagation();
+    selectNode(id);
+    if(mode==='sel'){
+      const pos = clientToWrap(e.clientX, e.clientY);
+      drag = {id, ox: pos.x - parseFloat(el.style.left), oy: pos.y - parseFloat(el.style.top)};
+    }
+  });
+
+  // ── port mousedown: start connection ──
+  el.querySelectorAll('.port').forEach(port=>{
+    port.addEventListener('mousedown', e=>{
+      e.preventDefault();
+      e.stopPropagation();
+      const p = port.dataset.p;
+      const pp = portPos(id, p);
+
+      // build temp draw path
+      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
+      path.setAttribute('fill','none');
+      path.setAttribute('stroke','#0A84FF');
+      path.setAttribute('stroke-width','2');
+      path.setAttribute('stroke-dasharray','6 3');
+      path.setAttribute('marker-end','url(#arr-blue)');
+      sv.appendChild(path);
+
+      conn = {from: id, fp: p, pathEl: path};
+    });
+  });
+
+  // ── text editing ──
+  const span = el.querySelector('span');
+  span.addEventListener('input', refreshAll);
+  span.addEventListener('keydown', e=>{ if(e.key==='Escape') span.blur(); e.stopPropagation(); });
+  span.addEventListener('mousedown', e=>e.stopPropagation());
+
+  return id;
+}
+
+// ─── finish edge ───────────────────────────────────────────────────────────
+function finishConn(toId, toPort){
+  if(!conn) return;
+  conn.pathEl.remove();
+  const from=conn.from, fp=conn.fp;
+  conn=null;
+
+  if(from===toId) return;
+
+  const id = 'e'+(++eid);
+  const pathEl = document.createElementNS('http://www.w3.org/2000/svg','path');
+  pathEl.setAttribute('fill','none');
+  pathEl.setAttribute('stroke','#6B7280');
+  pathEl.setAttribute('stroke-width','2');
+  pathEl.setAttribute('marker-end','url(#arr)');
+  pathEl.style.cursor='pointer';
+  sv.appendChild(pathEl);
+
+  // edge label
+  const lblEl = document.createElement('div');
+  lblEl.className='elabel';
+  lblEl.contentEditable='true';
+  lblEl.spellcheck=false;
+  lblEl.textContent='';
+  lblEl.title='Click to add label';
+  nl.appendChild(lblEl);
+  lblEl.addEventListener('mousedown',e=>e.stopPropagation());
+  lblEl.addEventListener('keydown',e=>e.stopPropagation());
+
+  const edge = {id,from,fp,to:toId,tp:toPort,pathEl,lblEl};
+  edges.push(edge);
+
+  pathEl.addEventListener('mousedown', e=>{
+    e.stopPropagation();
+    selectEdge(edge);
+  });
+
+  refreshEdge(edge);
+}
+
+// ─── selection ─────────────────────────────────────────────────────────────
+function selectNode(id){
+  clearSel();
+  selNode=id;
+  nodes[id].el.classList.add('sel');
+  hint.classList.add('show');
+}
+function selectEdge(e){
+  clearSel();
+  selEdge=e;
+  e.pathEl.setAttribute('stroke','#0A84FF');
+  e.pathEl.setAttribute('marker-end','url(#arr-blue)');
+  hint.classList.add('show');
+}
+function clearSel(){
+  if(selNode){ nodes[selNode]?.el.classList.remove('sel'); selNode=null; }
+  if(selEdge){
+    selEdge.pathEl.setAttribute('stroke','#6B7280');
+    selEdge.pathEl.setAttribute('marker-end','url(#arr)');
+    selEdge=null;
+  }
+  hint.classList.remove('show');
+}
+
+// ─── global mouse events ───────────────────────────────────────────────────
+document.addEventListener('mousemove', e=>{
+  const pos = clientToWrap(e.clientX, e.clientY);
+
+  // drag node
+  if(drag){
+    const nx = pos.x - drag.ox;
+    const ny = pos.y - drag.oy;
+    const el = nodes[drag.id].el;
+    el.style.left = nx+'px';
+    el.style.top  = ny+'px';
+    refreshAll();
+    return;
+  }
+
+  // draw connection line
+  if(conn){
+    const p1 = portPos(conn.from, conn.fp);
+    // check snap
+    const snap = snapPort(pos.x, pos.y, conn.from);
+    const p2 = snap ? portPos(snap.nodeId, snap.port) : pos;
+    const d2 = snap ? snap.port : nearestPort('_fake', pos.x, pos.y) || 't';
+    const d = makePath(p1, conn.fp, p2, snap ? snap.port : 't');
+    conn.pathEl.setAttribute('d', d);
+  }
+});
+
+document.addEventListener('mouseup', e=>{
+  // end drag
+  if(drag){ drag=null; return; }
+
+  // end connection — check snap
+  if(conn){
+    const pos = clientToWrap(e.clientX, e.clientY);
+    const snap = snapPort(pos.x, pos.y, conn.from);
+    if(snap){
+      finishConn(snap.nodeId, snap.port);
+    } else {
+      conn.pathEl.remove();
+      conn=null;
+    }
+  }
+});
+
+wrap.addEventListener('mousedown', e=>{
+  if(e.target===wrap || e.target.classList.contains('grid')) clearSel();
+});
+
+// ─── keyboard ──────────────────────────────────────────────────────────────
+document.addEventListener('keydown', e=>{
+  if(document.activeElement.contentEditable==='true') return;
+  if(e.key==='Delete'||e.key==='Backspace'){
+    if(selNode) delNode(selNode);
+    else if(selEdge) delEdge(selEdge);
+  }
+  if(e.key==='Escape'){ clearSel(); if(conn){conn.pathEl.remove();conn=null;} }
+  if(e.key==='v'||e.key==='V') setMode('sel');
+  if(e.key==='c'||e.key==='C') setMode('con');
+});
+
+// ─── delete ────────────────────────────────────────────────────────────────
+function delNode(id){
+  nodes[id].el.remove();
+  for(let i=edges.length-1;i>=0;i--){
+    if(edges[i].from===id||edges[i].to===id){
+      edges[i].pathEl.remove(); edges[i].lblEl.remove(); edges.splice(i,1);
+    }
+  }
+  delete nodes[id]; clearSel();
+}
+function delEdge(e){
+  e.pathEl.remove(); e.lblEl.remove();
+  edges.splice(edges.indexOf(e),1); clearSel();
+}
+
+// ─── mode / edge style ─────────────────────────────────────────────────────
+function setMode(m){
+  mode=m;
+  document.getElementById('bsel').classList.toggle('on',m==='sel');
+  document.getElementById('bcon').classList.toggle('on',m==='con');
+  wrap.style.cursor = m==='con'?'crosshair':'default';
+}
+function setEdge(t){
+  edgeType=t;
+  ['curve','elbow','line'].forEach(x=>document.getElementById('e-'+x).classList.toggle('on',x===t));
+  refreshAll();
+}
+
+// ─── clear ─────────────────────────────────────────────────────────────────
+function doClear(){
+  if(!confirm('Clear the canvas?')) return;
+  Object.keys(nodes).forEach(delNode);
+  clearSel();
+}
+
+// ─── export mermaid ────────────────────────────────────────────────────────
+function doExport(){
+  const lines=['flowchart TD'];
+  const fmt={
+    step:     (id,t)=>`    ${id}["${t}"]`,
+    decision: (id,t)=>`    ${id}{"${t}"}`,
+    terminal: (id,t)=>`    ${id}(["${t}"])`,
+    action:   (id,t)=>`    ${id}["${t}"]`,
+  };
+  Object.entries(nodes).forEach(([id,n])=>{
+    const t = n.el.querySelector('span').textContent.trim().replace(/\n/g,'\\n').replace(/"/g,"'");
+    lines.push((fmt[n.shape]||fmt.step)(id,t));
+  });
+  edges.forEach(e=>{
+    const lbl = e.lblEl.textContent.trim();
+    lines.push(`    ${e.from} ${lbl?`-->|${lbl}|`:'-->'} ${e.to}`);
+  });
+  document.getElementById('mout').value = lines.join('\n');
+  document.getElementById('modal-bg').classList.add('open');
+}
+function closeModal(){ document.getElementById('modal-bg').classList.remove('open'); }
+function doCopy(){
+  navigator.clipboard.writeText(document.getElementById('mout').value).catch(()=>{});
+  const b=document.getElementById('copybtn'); b.textContent='Copied!';
+  setTimeout(()=>b.textContent='Copy to clipboard',1800);
+}
+
+// ─── seed example ──────────────────────────────────────────────────────────
+window.addEventListener('load',()=>{
+  const cx = wrap.clientWidth/2;
+  const s  = addNode('terminal', cx-60,  40, 'Start');
+  const d  = addNode('decision', cx-80, 160, 'Is invoice ≥ $500?');
+  const a  = addNode('action',   cx-240, 310, 'Under $500 floor — expected');
+  const b  = addNode('step',     cx+60,  310, 'Check vendor GL / code');
+  const e2 = addNode('terminal', cx-60,  450, 'Resolved');
+
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const mkEdge=(from,fp,to,tp,lbl)=>{
+      const id='e'+(++eid);
+      const pathEl=document.createElementNS('http://www.w3.org/2000/svg','path');
+      pathEl.setAttribute('fill','none');
+      pathEl.setAttribute('stroke','#6B7280');
+      pathEl.setAttribute('stroke-width','2');
+      pathEl.setAttribute('marker-end','url(#arr)');
+      pathEl.style.cursor='pointer';
+      sv.appendChild(pathEl);
+      const lblEl=document.createElement('div');
+      lblEl.className='elabel'; lblEl.contentEditable='true'; lblEl.spellcheck=false;
+      lblEl.textContent=lbl||'';
+      nl.appendChild(lblEl);
+      lblEl.addEventListener('mousedown',e=>e.stopPropagation());
+      lblEl.addEventListener('keydown',e=>e.stopPropagation());
+      const edge={id,from,fp,to,tp,pathEl,lblEl};
+      edges.push(edge);
+      pathEl.addEventListener('mousedown',e=>{e.stopPropagation();selectEdge(edge);});
+      refreshEdge(edge);
+    };
+    mkEdge(s,'b',d,'t','');
+    mkEdge(d,'l',a,'t','No');
+    mkEdge(d,'r',b,'t','Yes');
+    mkEdge(a,'b',e2,'l','');
+    mkEdge(b,'b',e2,'r','');
+  }));
+});
+</script>
+</body>
+</html>
