@@ -3,531 +3,1012 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Flowchart Builder</title>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<title>Banner Flowchart Builder</title>
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'Inter',sans-serif;background:#F0F2F5;height:100vh;overflow:hidden;display:flex;flex-direction:column;user-select:none}
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #f5f4f0; color: #1B2B4B; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-.toolbar{background:#1C1C1E;height:52px;display:flex;align-items:center;gap:4px;padding:0 14px;flex-shrink:0;box-shadow:0 2px 8px rgba(0,0,0,.35);z-index:200}
-.tg{display:flex;align-items:center;gap:4px;padding:0 8px;border-right:1px solid #3A3A3C}
-.tg:last-child{border-right:none}
-.tlabel{color:#636366;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;padding:0 2px}
-.tbtn{background:transparent;border:1px solid transparent;border-radius:7px;color:#E5E5EA;font-size:12px;font-family:inherit;font-weight:500;padding:6px 10px;cursor:pointer;display:flex;align-items:center;gap:5px;white-space:nowrap;transition:all .12s}
-.tbtn:hover{background:#2C2C2E;border-color:#48484A}
-.tbtn.on{background:#0A84FF;border-color:#0A84FF;color:#fff}
-.sbtn{background:transparent;border:1px solid #3A3A3C;border-radius:6px;color:#E5E5EA;font-size:11px;font-family:inherit;font-weight:500;padding:5px 10px;cursor:pointer;transition:all .12s}
-.sbtn:hover{background:#2C2C2E;border-color:#636366}
-.sbtn.on{background:#1D3D6F;border-color:#0A84FF;color:#64ACFF}
-.spacer{flex:1}
+  /* Top bar */
+  #topbar {
+    background: #1B2B4B;
+    color: #fff;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 0 16px;
+    height: 52px;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  #topbar .logo { font-weight: 700; font-size: 15px; letter-spacing: 0.5px; margin-right: 8px; }
+  #topbar .logo span { color: #E8503A; }
+  #topbar .sep { width: 1px; height: 28px; background: rgba(255,255,255,0.2); }
+  .tb-btn {
+    background: rgba(255,255,255,0.1);
+    border: none;
+    color: #fff;
+    padding: 5px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+    transition: background 0.15s;
+  }
+  .tb-btn:hover { background: rgba(255,255,255,0.2); }
+  .tb-btn.primary { background: #E8503A; }
+  .tb-btn.primary:hover { background: #d4472f; }
+  .tb-btn.notion-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); }
+  .tb-btn.notion-btn:hover { background: rgba(255,255,255,0.25); }
+  #topbar .spacer { flex: 1; }
+  #mode-label { font-size: 12px; opacity: 0.6; }
 
-.wrap{flex:1;position:relative;overflow:hidden}
-.grid{position:absolute;inset:0;background-image:linear-gradient(rgba(0,0,0,.055) 1px,transparent 1px),linear-gradient(90deg,rgba(0,0,0,.055) 1px,transparent 1px);background-size:24px 24px;pointer-events:none}
+  /* Shape palette */
+  #palette {
+    background: #fff;
+    border-bottom: 1px solid #e5e5e5;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    flex-shrink: 0;
+  }
+  #palette .pal-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #888; margin-right: 4px; }
+  .shape-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fafafa;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    color: #333;
+    transition: all 0.15s;
+  }
+  .shape-btn:hover { border-color: #1B2B4B; background: #f0f0f0; }
+  .shape-btn svg { flex-shrink: 0; }
+  #palette .sep { width: 1px; height: 28px; background: #e5e5e5; margin: 0 4px; }
+  .mode-btn {
+    padding: 5px 12px;
+    border: 1.5px solid #e0e0e0;
+    border-radius: 6px;
+    background: #fafafa;
+    cursor: pointer;
+    font-size: 12px;
+    font-family: inherit;
+    color: #555;
+  }
+  .mode-btn.active { background: #1B2B4B; color: #fff; border-color: #1B2B4B; }
 
-svg#sv{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible}
-#nl{position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none}
+  /* Canvas area */
+  #canvas-wrap {
+    flex: 1;
+    position: relative;
+    overflow: hidden;
+    background: #f5f4f0;
+    background-image: radial-gradient(circle, #ccc 1px, transparent 1px);
+    background-size: 24px 24px;
+  }
+  #canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+  }
 
-/* nodes */
-.node{position:absolute;pointer-events:all;cursor:default}
-.node .body{position:relative;padding:10px 16px;font-size:13px;font-weight:500;text-align:center;line-height:1.45;word-break:break-word;min-width:110px;max-width:260px;transition:box-shadow .12s}
-.node[data-s=step]     .body{background:#fff;border:2px solid #D1D5DB;border-radius:8px;color:#111}
-.node[data-s=decision] .body{background:#FFFBEB;border:2px solid #FCD34D;border-radius:8px;color:#92400E}
-.node[data-s=terminal] .body{background:#F0FDF4;border:2px solid #86EFAC;border-radius:50px;color:#166534}
-.node[data-s=action]   .body{background:#EFF6FF;border:2px solid #93C5FD;border-radius:8px;color:#1E40AF}
-.node.sel .body{box-shadow:0 0 0 3px #0A84FF;border-color:#0A84FF!important}
-.node:not(.sel) .body:hover{box-shadow:0 4px 14px rgba(0,0,0,.13)}
+  /* SVG layer for connections */
+  #svg-layer {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    pointer-events: none;
+  }
+  #svg-layer path { pointer-events: stroke; }
 
-/* inline text */
-.node span{outline:none;display:block;cursor:text;white-space:pre-wrap}
+  /* Nodes */
+  .node {
+    position: absolute;
+    min-width: 140px;
+    max-width: 240px;
+    cursor: grab;
+    user-select: none;
+  }
+  .node:active { cursor: grabbing; }
+  .node.selected > .node-body { outline: 2px solid #E8503A; outline-offset: 2px; }
 
-/* ports */
-.port{position:absolute;width:14px;height:14px;background:#0A84FF;border:2.5px solid #fff;border-radius:50%;opacity:0;transition:opacity .12s;cursor:crosshair;pointer-events:all;z-index:10}
-.node:hover .port,.node.sel .port{opacity:1}
-.port:hover{opacity:1!important;transform:scale(1.3)}
-.port[data-p=t]{top:-7px;left:50%;transform:translateX(-50%)}
-.port[data-p=r]{right:-7px;top:50%;transform:translateY(-50%)}
-.port[data-p=b]{bottom:-7px;left:50%;transform:translateX(-50%)}
-.port[data-p=l]{left:-7px;top:50%;transform:translateY(-50%)}
-.port[data-p=t]:hover{transform:translateX(-50%) scale(1.3)}
-.port[data-p=b]:hover{transform:translateX(-50%) scale(1.3)}
-.port[data-p=r]:hover{transform:translateY(-50%) scale(1.3)}
-.port[data-p=l]:hover{transform:translateY(-50%) scale(1.3)}
+  .node-body {
+    border-radius: 6px;
+    padding: 10px 14px;
+    font-size: 13px;
+    line-height: 1.4;
+    text-align: center;
+    border: 1.5px solid #D1D5DB;
+    background: #fff;
+    word-wrap: break-word;
+    position: relative;
+  }
+  .node[data-shape="decision"] .node-body {
+    background: #FFFBEB;
+    border-color: #FCD34D;
+    border-radius: 4px;
+    transform: rotate(45deg);
+    width: 110px;
+    height: 110px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 8px;
+  }
+  .node[data-shape="decision"] .node-text {
+    transform: rotate(-45deg);
+    display: block;
+    font-size: 12px;
+    line-height: 1.3;
+  }
+  .node[data-shape="terminal"] .node-body {
+    background: #F0FDF4;
+    border-color: #86EFAC;
+    border-radius: 50px;
+  }
+  .node[data-shape="action"] .node-body {
+    background: #EFF6FF;
+    border-color: #93C5FD;
+    border-radius: 3px;
+  }
 
-/* edge labels */
-.elabel{position:absolute;pointer-events:all;background:#fff;border:1px solid #D1D5DB;border-radius:5px;padding:2px 8px;font-size:11px;font-weight:500;color:#374151;cursor:text;transform:translate(-50%,-50%);white-space:nowrap;outline:none;min-width:16px;text-align:center}
+  /* Ports */
+  .port {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: #fff;
+    border: 2px solid #9CA3AF;
+    border-radius: 50%;
+    cursor: crosshair;
+    transition: border-color 0.1s, background 0.1s;
+    z-index: 10;
+    pointer-events: all;
+  }
+  .port:hover, .port.highlight { border-color: #E8503A; background: #E8503A; }
+  /* Normal node ports */
+  .node:not([data-shape="decision"]) .port-n { top: -6px; left: 50%; transform: translateX(-50%); }
+  .node:not([data-shape="decision"]) .port-s { bottom: -6px; left: 50%; transform: translateX(-50%); }
+  .node:not([data-shape="decision"]) .port-e { right: -6px; top: 50%; transform: translateY(-50%); }
+  .node:not([data-shape="decision"]) .port-w { left: -6px; top: 50%; transform: translateY(-50%); }
+  /* Decision node ports — placed on the diamond tips */
+  .node[data-shape="decision"] .port-n { top: -6px; left: 50%; transform: translateX(-50%); }
+  .node[data-shape="decision"] .port-s { bottom: -6px; left: 50%; transform: translateX(-50%); }
+  .node[data-shape="decision"] .port-e { right: -6px; top: 50%; transform: translateY(-50%); }
+  .node[data-shape="decision"] .port-w { left: -6px; top: 50%; transform: translateY(-50%); }
 
-/* hint */
-.hint{position:fixed;bottom:14px;left:50%;transform:translateX(-50%);background:rgba(28,28,30,.9);color:#E5E5EA;font-size:12px;padding:6px 16px;border-radius:20px;pointer-events:none;opacity:0;transition:opacity .2s;backdrop-filter:blur(8px)}
-.hint.show{opacity:1}
+  /* Edge labels */
+  .edge-label {
+    position: absolute;
+    font-size: 11px;
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 1px 5px;
+    color: #555;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+  }
 
-/* export modal */
-.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:999;align-items:center;justify-content:center}
-.modal-bg.open{display:flex}
-.modal{background:#1C1C1E;border:1px solid #3A3A3C;border-radius:14px;padding:24px;width:540px;display:flex;flex-direction:column;gap:12px}
-.modal h3{color:#E5E5EA;font-size:14px}
-.modal textarea{background:#2C2C2E;border:1px solid #48484A;border-radius:8px;color:#E5E5EA;font-family:Menlo,monospace;font-size:12px;padding:12px;resize:none;outline:none;min-height:260px}
-.modal-btns{display:flex;gap:8px;justify-content:flex-end}
-.btn-pri{background:#0A84FF;border:none;border-radius:8px;color:#fff;font-family:inherit;font-size:13px;font-weight:500;padding:8px 18px;cursor:pointer}
-.btn-sec{background:#2C2C2E;border:1px solid #48484A;border-radius:8px;color:#E5E5EA;font-family:inherit;font-size:13px;padding:8px 18px;cursor:pointer}
+  /* Modals */
+  .modal-bg {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.4);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+  }
+  .modal-bg.open { display: flex; }
+  .modal {
+    background: #fff;
+    border-radius: 10px;
+    padding: 24px;
+    width: 480px;
+    max-width: 95vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+  }
+  .modal h3 { font-size: 16px; margin-bottom: 16px; color: #1B2B4B; }
+  .modal textarea {
+    width: 100%;
+    font-family: 'Courier New', monospace;
+    font-size: 12px;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    padding: 10px;
+    resize: vertical;
+    min-height: 260px;
+    color: #333;
+  }
+  .modal-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
+  .modal-btn {
+    padding: 7px 18px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 13px;
+    font-family: inherit;
+  }
+  .modal-btn.primary { background: #E8503A; color: #fff; }
+  .modal-btn.secondary { background: #f0f0f0; color: #333; }
+
+  /* Label editor */
+  #edge-label-input {
+    display: none;
+    position: fixed;
+    z-index: 500;
+    background: #fff;
+    border: 1.5px solid #E8503A;
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    min-width: 80px;
+  }
+
+  /* Inline text editor */
+  .node-edit-input {
+    border: none;
+    background: transparent;
+    text-align: center;
+    font-size: 13px;
+    font-family: inherit;
+    width: 100%;
+    outline: none;
+    line-height: 1.4;
+    resize: none;
+    overflow: hidden;
+  }
+
+  /* Status bar */
+  #statusbar {
+    background: #1B2B4B;
+    color: rgba(255,255,255,0.6);
+    font-size: 11px;
+    padding: 4px 16px;
+    display: flex;
+    gap: 16px;
+    flex-shrink: 0;
+  }
+  #statusbar span b { color: #fff; }
 </style>
 </head>
 <body>
 
-<div class="toolbar">
-  <div class="tg">
-    <span class="tlabel">Mode</span>
-    <button class="tbtn on" id="bsel" onclick="setMode('sel')">
-      <svg width="13" height="13" viewBox="0 0 13 13" fill="none"><path d="M2 2l9 4.5-4 1-1.5 4.5z" fill="currentColor"/></svg>Select
-    </button>
-    <button class="tbtn" id="bcon" onclick="setMode('con')">
-      <svg width="14" height="10" viewBox="0 0 14 10" fill="none"><path d="M1 5h12M9 2l4 3-4 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>Connect
-    </button>
-  </div>
-  <div class="tg">
-    <span class="tlabel">Add</span>
-    <button class="sbtn" onclick="addNode('step')">☐ Step</button>
-    <button class="sbtn" onclick="addNode('decision')">◇ Decision</button>
-    <button class="sbtn" onclick="addNode('terminal')">◯ Start/End</button>
-    <button class="sbtn" onclick="addNode('action')">▣ Action</button>
-  </div>
-  <div class="tg">
-    <span class="tlabel">Arrows</span>
-    <button class="sbtn on" id="e-curve" onclick="setEdge('curve')">Curved</button>
-    <button class="sbtn" id="e-elbow" onclick="setEdge('elbow')">Elbow</button>
-    <button class="sbtn" id="e-line" onclick="setEdge('line')">Straight</button>
-  </div>
+<!-- Top bar -->
+<div id="topbar">
+  <div class="logo"><span>B</span>anner</div>
+  <div class="logo" style="font-weight:400;font-size:13px;opacity:0.7">Flowchart Builder</div>
+  <div class="sep"></div>
+  <button class="tb-btn" onclick="clearCanvas()">🗑 Clear</button>
+  <button class="tb-btn" onclick="loadSample()">📋 Sample</button>
   <div class="spacer"></div>
-  <div class="tg">
-    <button class="tbtn" onclick="doExport()">↓ Export Mermaid</button>
-    <button class="tbtn" onclick="doClear()">✕ Clear</button>
-  </div>
+  <span id="mode-label">V = Select · C = Connect · Del = Delete · Esc = Cancel</span>
+  <div class="sep"></div>
+  <button class="tb-btn" onclick="copyMermaidDirect()" title="Copy Mermaid code to clipboard">📋 Copy Mermaid</button>
+  <button class="tb-btn" onclick="exportSVG()">⬇ Export SVG</button>
+  <div class="sep"></div>
+  <button class="tb-btn notion-btn" onclick="saveToNotion()" title="Open Flowchart Library in Notion">
+    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="display:inline;vertical-align:-2px;margin-right:5px"><rect x="1" y="1" width="12" height="12" rx="2" fill="white" opacity="0.9"/><path d="M3.5 3.5h4l3 3.5-3 3.5h-4v-7z" fill="#1B2B4B" opacity="0.7"/></svg>
+    Save to Notion
+  </button>
 </div>
 
-<div class="wrap" id="wrap">
-  <div class="grid"></div>
-  <svg id="sv">
+<!-- Shape palette -->
+<div id="palette">
+  <span class="pal-label">Add Shape</span>
+  <button class="shape-btn" onclick="addNode('step')">
+    <svg width="16" height="12"><rect x="0" y="0" width="16" height="12" rx="2" fill="#fff" stroke="#D1D5DB" stroke-width="1.5"/></svg>
+    Step
+  </button>
+  <button class="shape-btn" onclick="addNode('decision')">
+    <svg width="16" height="16"><polygon points="8,0 16,8 8,16 0,8" fill="#FFFBEB" stroke="#FCD34D" stroke-width="1.5"/></svg>
+    Decision
+  </button>
+  <button class="shape-btn" onclick="addNode('terminal')">
+    <svg width="20" height="12"><rect x="0" y="0" width="20" height="12" rx="6" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5"/></svg>
+    Terminal
+  </button>
+  <button class="shape-btn" onclick="addNode('action')">
+    <svg width="16" height="12"><rect x="0" y="0" width="16" height="12" rx="1" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1.5"/></svg>
+    Action
+  </button>
+  <div class="sep"></div>
+  <button class="mode-btn active" id="btn-select" onclick="setMode('select')">✦ Select</button>
+  <button class="mode-btn" id="btn-connect" onclick="setMode('connect')">⤳ Connect</button>
+</div>
+
+<!-- Canvas -->
+<div id="canvas-wrap">
+  <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <marker id="arr" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-        <polygon points="0 0,10 3.5,0 7" fill="#6B7280"/>
+      <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#6B7280"/>
       </marker>
-      <marker id="arr-blue" markerWidth="10" markerHeight="7" refX="9" refY="3.5" orient="auto">
-        <polygon points="0 0,10 3.5,0 7" fill="#0A84FF"/>
+      <marker id="arrow-preview" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
+        <polygon points="0 0, 10 3.5, 0 7" fill="#E8503A"/>
       </marker>
     </defs>
+    <path id="preview-line" d="" stroke="#E8503A" stroke-width="1.5" stroke-dasharray="6,4" fill="none" marker-end="url(#arrow-preview)" style="display:none"/>
   </svg>
-  <div id="nl"></div>
+  <div id="canvas"></div>
 </div>
 
-<div class="hint" id="hint">Delete / Backspace to remove · Esc to cancel</div>
+<!-- Status bar -->
+<div id="statusbar">
+  <span>Nodes: <b id="st-nodes">0</b></span>
+  <span>Connections: <b id="st-edges">0</b></span>
+  <span>Mode: <b id="st-mode">Select</b></span>
+  <span style="margin-left:auto;opacity:0.5">Double-click node to edit label · Click connection to add label</span>
+</div>
 
-<div class="modal-bg" id="modal-bg" onclick="if(event.target===this)closeModal()">
+<!-- Mermaid modal -->
+<div class="modal-bg" id="mermaid-modal">
   <div class="modal">
-    <h3>Mermaid code — paste into Notion</h3>
-    <textarea id="mout" readonly></textarea>
-    <div class="modal-btns">
-      <button class="btn-sec" onclick="closeModal()">Close</button>
-      <button class="btn-pri" id="copybtn" onclick="doCopy()">Copy to clipboard</button>
+    <h3>Mermaid Code</h3>
+    <textarea id="mermaid-out" readonly></textarea>
+    <div class="modal-actions">
+      <button class="modal-btn secondary" onclick="closeMermaid()">Close</button>
+      <button class="modal-btn primary" onclick="copyMermaid()">Copy</button>
     </div>
   </div>
 </div>
 
+<!-- Edge label input -->
+<input id="edge-label-input" type="text" placeholder="Label (Enter to set)">
+
 <script>
-// ─── globals ───────────────────────────────────────────────────────────────
-let mode = 'sel';
-let edgeType = 'curve';
-let nid = 0, eid = 0;
-const nodes = {};   // id → {el, shape}
-const edges = [];   // {id,from,fp,to,tp,pathEl,lblEl}
-let selNode = null, selEdge = null;
+// ─── State ───────────────────────────────────────────────────────────────────
+let nodes = {};      // id → {id, shape, x, y, label, el}
+let edges = [];      // {id, from, fromPort, to, toPort, label, pathEl, labelEl}
+let nodeCounter = 0;
+let edgeCounter = 0;
+let mode = 'select'; // 'select' | 'connect'
 
-// drag state
-let drag = null; // {id, ox, oy}
+// Drag state
+let drag = null;     // {nodeId, ox, oy}  (offset from node top-left to click point in wrap coords)
 
-// connect state
-let conn = null; // {from, fp, pathEl}
+// Connection state
+let conn = null;     // {fromId, fromPort, startX, startY}
+let snapPort = null; // {nodeId, port} currently snapping
 
-const sv   = document.getElementById('sv');
-const nl   = document.getElementById('nl');
-const wrap = document.getElementById('wrap');
-const hint = document.getElementById('hint');
+const wrap = document.getElementById('canvas-wrap');
+const canvas = document.getElementById('canvas');
+const svgLayer = document.getElementById('svg-layer');
+const previewLine = document.getElementById('preview-line');
 
-// ─── coordinate helpers ────────────────────────────────────────────────────
-function wrapRect(){ return wrap.getBoundingClientRect(); }
-
-function clientToWrap(cx,cy){
-  const r = wrapRect();
-  return {x: cx - r.left, y: cy - r.top};
+// ─── Coordinate helper ───────────────────────────────────────────────────────
+function c2w(clientX, clientY) {
+  const r = wrap.getBoundingClientRect();
+  return { x: clientX - r.left, y: clientY - r.top };
 }
 
-// Get bounding rect of .body relative to wrap
-function bodyRect(id){
-  const r = nodes[id].el.querySelector('.body').getBoundingClientRect();
-  const wr = wrapRect();
-  return {
-    x: r.left - wr.left, y: r.top - wr.top,
-    w: r.width, h: r.height,
-    cx: r.left - wr.left + r.width/2,
-    cy: r.top  - wr.top  + r.height/2
-  };
+function portCenter(nodeId, port) {
+  const n = nodes[nodeId];
+  if (!n) return {x:0,y:0};
+  const r = n.el.getBoundingClientRect();
+  const wr = wrap.getBoundingClientRect();
+  const nx = r.left - wr.left;
+  const ny = r.top - wr.top;
+  const nw = r.width;
+  const nh = r.height;
+  const map = { n:{x:nw/2,y:0}, s:{x:nw/2,y:nh}, e:{x:nw,y:nh/2}, w:{x:0,y:nh/2} };
+  const off = map[port] || {x:nw/2,y:nh/2};
+  return { x: nx + off.x, y: ny + off.y };
 }
 
-function portPos(id, p){
-  const b = bodyRect(id);
-  if(p==='t') return {x: b.cx,       y: b.y};
-  if(p==='b') return {x: b.cx,       y: b.y + b.h};
-  if(p==='l') return {x: b.x,        y: b.cy};
-  if(p==='r') return {x: b.x + b.w,  y: b.cy};
+// ─── Mode ────────────────────────────────────────────────────────────────────
+function setMode(m) {
+  mode = m;
+  document.getElementById('btn-select').classList.toggle('active', m === 'select');
+  document.getElementById('btn-connect').classList.toggle('active', m === 'connect');
+  document.getElementById('st-mode').textContent = m === 'select' ? 'Select' : 'Connect';
+  if (m === 'select') cancelConn();
 }
 
-// nearest port on a node to a point
-function nearestPort(id, x, y){
-  let best='t', bd=Infinity;
-  ['t','r','b','l'].forEach(p=>{
-    const pp=portPos(id,p);
-    const d=Math.hypot(x-pp.x, y-pp.y);
-    if(d<bd){bd=d;best=p;}
-  });
-  return best;
-}
-
-// snap: return {nodeId,port} if within 28px of any port on any node except exclude
-function snapPort(x, y, excludeId){
-  const SNAP = 28;
-  for(const id in nodes){
-    if(id===excludeId) continue;
-    for(const p of ['t','r','b','l']){
-      const pp = portPos(id,p);
-      if(Math.hypot(x-pp.x, y-pp.y) < SNAP) return {nodeId:id, port:p};
-    }
+// ─── Add node ────────────────────────────────────────────────────────────────
+function addNode(shape, x, y, label) {
+  const id = 'n' + (++nodeCounter);
+  if (!x) {
+    const cx = wrap.offsetWidth / 2 - 80 + Math.random()*40-20;
+    const cy = wrap.offsetHeight / 2 - 40 + Math.random()*40-20;
+    x = cx; y = cy;
   }
-  return null;
-}
-
-// ─── path computation ──────────────────────────────────────────────────────
-function makePath(p1, d1, p2, d2){
-  const {x:x1,y:y1}=p1, {x:x2,y:y2}=p2;
-  if(edgeType==='line') return `M${x1} ${y1} L${x2} ${y2}`;
-  if(edgeType==='elbow'){
-    const mx=(x1+x2)/2, my=(y1+y2)/2;
-    if(d1==='r'||d1==='l') return `M${x1} ${y1} H${mx} V${y2} H${x2}`;
-    return `M${x1} ${y1} V${my} H${x2} V${y2}`;
-  }
-  // bezier
-  const pull = Math.min(Math.max(Math.hypot(x2-x1,y2-y1)*0.45, 40), 160);
-  const c1x = d1==='r'?x1+pull : d1==='l'?x1-pull : x1;
-  const c1y = d1==='b'?y1+pull : d1==='t'?y1-pull : y1;
-  const c2x = d2==='l'?x2-pull : d2==='r'?x2+pull : x2;
-  const c2y = d2==='t'?y2-pull : d2==='b'?y2+pull : y2;
-  return `M${x1} ${y1} C${c1x} ${c1y} ${c2x} ${c2y} ${x2} ${y2}`;
-}
-
-// ─── refresh edges ─────────────────────────────────────────────────────────
-function refreshEdge(e){
-  if(!nodes[e.from]||!nodes[e.to]) return;
-  const p1 = portPos(e.from, e.fp);
-  const p2 = portPos(e.to,   e.tp);
-  const d  = makePath(p1, e.fp, p2, e.tp);
-  e.pathEl.setAttribute('d', d);
-  // label midpoint
-  const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
-  e.lblEl.style.left = mx+'px';
-  e.lblEl.style.top  = my+'px';
-}
-
-function refreshAll(){ edges.forEach(refreshEdge); }
-
-// ─── add node ──────────────────────────────────────────────────────────────
-function addNode(shape, x, y, txt){
-  const id = 'n'+(++nid);
-  if(x===undefined){
-    x = wrap.clientWidth/2  - 70 + (Math.random()-.5)*60;
-    y = wrap.clientHeight/2 - 30 + (Math.random()-.5)*60;
-  }
-  const defaults = {step:'Step',decision:'Decision?',terminal:'Start / End',action:'Action'};
+  label = label || shapeDefault(shape);
 
   const el = document.createElement('div');
   el.className = 'node';
   el.dataset.id = id;
-  el.dataset.s  = shape;
-  el.style.left = x+'px';
-  el.style.top  = y+'px';
-  el.innerHTML  = `
-    <div class="body">
-      <span contenteditable="true" spellcheck="false">${txt||defaults[shape]}</span>
-    </div>
-    <div class="port" data-p="t" data-id="${id}"></div>
-    <div class="port" data-p="r" data-id="${id}"></div>
-    <div class="port" data-p="b" data-id="${id}"></div>
-    <div class="port" data-p="l" data-id="${id}"></div>`;
+  el.dataset.shape = shape;
+  el.style.left = x + 'px';
+  el.style.top  = y + 'px';
 
-  nl.appendChild(el);
-  nodes[id] = {el, shape};
+  const body = document.createElement('div');
+  body.className = 'node-body';
 
-  // ── node mousedown: drag or click-select ──
-  el.querySelector('.body').addEventListener('mousedown', e=>{
-    if(e.target.tagName==='SPAN' && document.activeElement===e.target) return; // editing
-    e.preventDefault();
-    e.stopPropagation();
-    selectNode(id);
-    if(mode==='sel'){
-      const pos = clientToWrap(e.clientX, e.clientY);
-      drag = {id, ox: pos.x - parseFloat(el.style.left), oy: pos.y - parseFloat(el.style.top)};
-    }
+  const textEl = document.createElement('span');
+  textEl.className = shape === 'decision' ? 'node-text' : '';
+  textEl.textContent = label;
+  body.appendChild(textEl);
+  el.appendChild(body);
+
+  // Ports
+  ['n','s','e','w'].forEach(p => {
+    const port = document.createElement('div');
+    port.className = 'port port-' + p;
+    port.dataset.port = p;
+    port.addEventListener('mousedown', onPortMousedown);
+    el.appendChild(port);
   });
 
-  // ── port mousedown: start connection ──
-  el.querySelectorAll('.port').forEach(port=>{
-    port.addEventListener('mousedown', e=>{
-      e.preventDefault();
-      e.stopPropagation();
-      const p = port.dataset.p;
-      const pp = portPos(id, p);
+  el.addEventListener('mousedown', onNodeMousedown);
+  el.addEventListener('dblclick', onNodeDblclick);
 
-      // build temp draw path
-      const path = document.createElementNS('http://www.w3.org/2000/svg','path');
-      path.setAttribute('fill','none');
-      path.setAttribute('stroke','#0A84FF');
-      path.setAttribute('stroke-width','2');
-      path.setAttribute('stroke-dasharray','6 3');
-      path.setAttribute('marker-end','url(#arr-blue)');
-      sv.appendChild(path);
-
-      conn = {from: id, fp: p, pathEl: path};
-    });
-  });
-
-  // ── text editing ──
-  const span = el.querySelector('span');
-  span.addEventListener('input', refreshAll);
-  span.addEventListener('keydown', e=>{ if(e.key==='Escape') span.blur(); e.stopPropagation(); });
-  span.addEventListener('mousedown', e=>e.stopPropagation());
-
+  canvas.appendChild(el);
+  nodes[id] = { id, shape, x, y, label, el, textEl };
+  updateStatus();
   return id;
 }
 
-// ─── finish edge ───────────────────────────────────────────────────────────
-function finishConn(toId, toPort){
-  if(!conn) return;
-  conn.pathEl.remove();
-  const from=conn.from, fp=conn.fp;
-  conn=null;
-
-  if(from===toId) return;
-
-  const id = 'e'+(++eid);
-  const pathEl = document.createElementNS('http://www.w3.org/2000/svg','path');
-  pathEl.setAttribute('fill','none');
-  pathEl.setAttribute('stroke','#6B7280');
-  pathEl.setAttribute('stroke-width','2');
-  pathEl.setAttribute('marker-end','url(#arr)');
-  pathEl.style.cursor='pointer';
-  sv.appendChild(pathEl);
-
-  // edge label
-  const lblEl = document.createElement('div');
-  lblEl.className='elabel';
-  lblEl.contentEditable='true';
-  lblEl.spellcheck=false;
-  lblEl.textContent='';
-  lblEl.title='Click to add label';
-  nl.appendChild(lblEl);
-  lblEl.addEventListener('mousedown',e=>e.stopPropagation());
-  lblEl.addEventListener('keydown',e=>e.stopPropagation());
-
-  const edge = {id,from,fp,to:toId,tp:toPort,pathEl,lblEl};
-  edges.push(edge);
-
-  pathEl.addEventListener('mousedown', e=>{
-    e.stopPropagation();
-    selectEdge(edge);
-  });
-
-  refreshEdge(edge);
+function shapeDefault(shape) {
+  return { step:'Step', decision:'Decision?', terminal:'Start/End', action:'Action' }[shape] || 'Node';
 }
 
-// ─── selection ─────────────────────────────────────────────────────────────
-function selectNode(id){
-  clearSel();
-  selNode=id;
-  nodes[id].el.classList.add('sel');
-  hint.classList.add('show');
-}
-function selectEdge(e){
-  clearSel();
-  selEdge=e;
-  e.pathEl.setAttribute('stroke','#0A84FF');
-  e.pathEl.setAttribute('marker-end','url(#arr-blue)');
-  hint.classList.add('show');
-}
-function clearSel(){
-  if(selNode){ nodes[selNode]?.el.classList.remove('sel'); selNode=null; }
-  if(selEdge){
-    selEdge.pathEl.setAttribute('stroke','#6B7280');
-    selEdge.pathEl.setAttribute('marker-end','url(#arr)');
-    selEdge=null;
-  }
-  hint.classList.remove('show');
+// ─── Node mousedown ───────────────────────────────────────────────────────────
+function onNodeMousedown(e) {
+  if (e.target.classList.contains('port')) return;
+  if (mode !== 'select') return;
+  e.stopPropagation();
+
+  const el = e.currentTarget;
+  const id = el.dataset.id;
+
+  // Deselect all, select this
+  selectNode(id);
+
+  // Capture offset: where within the node (in wrap coords) did we click?
+  const wPt = c2w(e.clientX, e.clientY);
+  const r = el.getBoundingClientRect();
+  const wr = wrap.getBoundingClientRect();
+  const nodeLeft = r.left - wr.left;
+  const nodeTop  = r.top  - wr.top;
+
+  drag = {
+    nodeId: id,
+    ox: wPt.x - nodeLeft,
+    oy: wPt.y - nodeTop,
+  };
 }
 
-// ─── global mouse events ───────────────────────────────────────────────────
-document.addEventListener('mousemove', e=>{
-  const pos = clientToWrap(e.clientX, e.clientY);
+function selectNode(id) {
+  Object.values(nodes).forEach(n => n.el.classList.remove('selected'));
+  if (id) nodes[id]?.el.classList.add('selected');
+}
 
-  // drag node
-  if(drag){
-    const nx = pos.x - drag.ox;
-    const ny = pos.y - drag.oy;
-    const el = nodes[drag.id].el;
-    el.style.left = nx+'px';
-    el.style.top  = ny+'px';
-    refreshAll();
+// ─── Port mousedown ───────────────────────────────────────────────────────────
+function onPortMousedown(e) {
+  if (mode !== 'connect') return;
+  e.stopPropagation();
+  e.preventDefault();
+
+  const portEl = e.currentTarget;
+  const nodeEl = portEl.closest('.node');
+  const nodeId = nodeEl.dataset.id;
+  const port = portEl.dataset.port;
+  const pt = portCenter(nodeId, port);
+
+  conn = { fromId: nodeId, fromPort: port, startX: pt.x, startY: pt.y };
+  previewLine.style.display = '';
+  updatePreview(pt.x, pt.y, pt.x, pt.y);
+}
+
+// ─── Global mousemove ─────────────────────────────────────────────────────────
+document.addEventListener('mousemove', e => {
+  const pt = c2w(e.clientX, e.clientY);
+
+  // Drag node
+  if (drag) {
+    const n = nodes[drag.nodeId];
+    if (!n) { drag = null; return; }
+    const newX = pt.x - drag.ox;
+    const newY = pt.y - drag.oy;
+    n.el.style.left = newX + 'px';
+    n.el.style.top  = newY + 'px';
+    n.x = newX; n.y = newY;
+    redrawEdges();
     return;
   }
 
-  // draw connection line
-  if(conn){
-    const p1 = portPos(conn.from, conn.fp);
-    // check snap
-    const snap = snapPort(pos.x, pos.y, conn.from);
-    const p2 = snap ? portPos(snap.nodeId, snap.port) : pos;
-    const d2 = snap ? snap.port : nearestPort('_fake', pos.x, pos.y) || 't';
-    const d = makePath(p1, conn.fp, p2, snap ? snap.port : 't');
-    conn.pathEl.setAttribute('d', d);
-  }
-});
+  // Connection preview
+  if (conn) {
+    // Snap check
+    snapPort = null;
+    let bestDist = 30;
+    Object.values(nodes).forEach(n => {
+      if (n.id === conn.fromId) return;
+      ['n','s','e','w'].forEach(p => {
+        const pc = portCenter(n.id, p);
+        const d = Math.hypot(pc.x - pt.x, pc.y - pt.y);
+        if (d < bestDist) {
+          bestDist = d;
+          snapPort = { nodeId: n.id, port: p };
+        }
+      });
+    });
 
-document.addEventListener('mouseup', e=>{
-  // end drag
-  if(drag){ drag=null; return; }
-
-  // end connection — check snap
-  if(conn){
-    const pos = clientToWrap(e.clientX, e.clientY);
-    const snap = snapPort(pos.x, pos.y, conn.from);
-    if(snap){
-      finishConn(snap.nodeId, snap.port);
-    } else {
-      conn.pathEl.remove();
-      conn=null;
+    // Highlight snap
+    document.querySelectorAll('.port.highlight').forEach(el => el.classList.remove('highlight'));
+    if (snapPort) {
+      const portEl = nodes[snapPort.nodeId].el.querySelector('.port-' + snapPort.port);
+      if (portEl) portEl.classList.add('highlight');
     }
+
+    const target = snapPort ? portCenter(snapPort.nodeId, snapPort.port) : pt;
+    updatePreview(conn.startX, conn.startY, target.x, target.y);
   }
 });
 
-wrap.addEventListener('mousedown', e=>{
-  if(e.target===wrap || e.target.classList.contains('grid')) clearSel();
-});
+// ─── Global mouseup ───────────────────────────────────────────────────────────
+document.addEventListener('mouseup', e => {
+  if (drag) { drag = null; }
 
-// ─── keyboard ──────────────────────────────────────────────────────────────
-document.addEventListener('keydown', e=>{
-  if(document.activeElement.contentEditable==='true') return;
-  if(e.key==='Delete'||e.key==='Backspace'){
-    if(selNode) delNode(selNode);
-    else if(selEdge) delEdge(selEdge);
-  }
-  if(e.key==='Escape'){ clearSel(); if(conn){conn.pathEl.remove();conn=null;} }
-  if(e.key==='v'||e.key==='V') setMode('sel');
-  if(e.key==='c'||e.key==='C') setMode('con');
-});
+  if (conn) {
+    document.querySelectorAll('.port.highlight').forEach(el => el.classList.remove('highlight'));
+    previewLine.style.display = 'none';
+    previewLine.setAttribute('d', '');
 
-// ─── delete ────────────────────────────────────────────────────────────────
-function delNode(id){
-  nodes[id].el.remove();
-  for(let i=edges.length-1;i>=0;i--){
-    if(edges[i].from===id||edges[i].to===id){
-      edges[i].pathEl.remove(); edges[i].lblEl.remove(); edges.splice(i,1);
+    if (snapPort) {
+      finishConn(snapPort.nodeId, snapPort.port);
     }
+    conn = null;
+    snapPort = null;
   }
-  delete nodes[id]; clearSel();
-}
-function delEdge(e){
-  e.pathEl.remove(); e.lblEl.remove();
-  edges.splice(edges.indexOf(e),1); clearSel();
+});
+
+function updatePreview(x1, y1, x2, y2) {
+  previewLine.setAttribute('d', curvePath(x1, y1, x2, y2));
 }
 
-// ─── mode / edge style ─────────────────────────────────────────────────────
-function setMode(m){
-  mode=m;
-  document.getElementById('bsel').classList.toggle('on',m==='sel');
-  document.getElementById('bcon').classList.toggle('on',m==='con');
-  wrap.style.cursor = m==='con'?'crosshair':'default';
-}
-function setEdge(t){
-  edgeType=t;
-  ['curve','elbow','line'].forEach(x=>document.getElementById('e-'+x).classList.toggle('on',x===t));
-  refreshAll();
+function cancelConn() {
+  conn = null;
+  snapPort = null;
+  previewLine.style.display = 'none';
+  previewLine.setAttribute('d', '');
+  document.querySelectorAll('.port.highlight').forEach(el => el.classList.remove('highlight'));
 }
 
-// ─── clear ─────────────────────────────────────────────────────────────────
-function doClear(){
-  if(!confirm('Clear the canvas?')) return;
-  Object.keys(nodes).forEach(delNode);
-  clearSel();
-}
+// ─── Finish connection ────────────────────────────────────────────────────────
+function finishConn(toId, toPort) {
+  // Prevent duplicate
+  const dup = edges.find(e => e.from === conn.fromId && e.fromPort === conn.fromPort && e.to === toId && e.toPort === toPort);
+  if (dup) return;
 
-// ─── export mermaid ────────────────────────────────────────────────────────
-function doExport(){
-  const lines=['flowchart TD'];
-  const fmt={
-    step:     (id,t)=>`    ${id}["${t}"]`,
-    decision: (id,t)=>`    ${id}{"${t}"}`,
-    terminal: (id,t)=>`    ${id}(["${t}"])`,
-    action:   (id,t)=>`    ${id}["${t}"]`,
+  const id = 'e' + (++edgeCounter);
+  const pathEl = document.createElementNS('http://www.w3.org/2000/svg','path');
+  pathEl.setAttribute('stroke','#6B7280');
+  pathEl.setAttribute('stroke-width','2');
+  pathEl.setAttribute('fill','none');
+  pathEl.setAttribute('marker-end','url(#arrow)');
+  pathEl.dataset.edgeId = id;
+  pathEl.style.cursor = 'pointer';
+  pathEl.addEventListener('click', onEdgeClick);
+  svgLayer.insertBefore(pathEl, previewLine);
+
+  const labelEl = document.createElement('div');
+  labelEl.className = 'edge-label';
+  labelEl.dataset.edgeId = id;
+  labelEl.style.display = 'none';
+  wrap.appendChild(labelEl);
+
+  const edge = {
+    id,
+    from: conn.fromId,
+    fromPort: conn.fromPort,
+    to: toId,
+    toPort,
+    label: '',
+    pathEl,
+    labelEl,
   };
-  Object.entries(nodes).forEach(([id,n])=>{
-    const t = n.el.querySelector('span').textContent.trim().replace(/\n/g,'\\n').replace(/"/g,"'");
-    lines.push((fmt[n.shape]||fmt.step)(id,t));
-  });
-  edges.forEach(e=>{
-    const lbl = e.lblEl.textContent.trim();
-    lines.push(`    ${e.from} ${lbl?`-->|${lbl}|`:'-->'} ${e.to}`);
-  });
-  document.getElementById('mout').value = lines.join('\n');
-  document.getElementById('modal-bg').classList.add('open');
-}
-function closeModal(){ document.getElementById('modal-bg').classList.remove('open'); }
-function doCopy(){
-  navigator.clipboard.writeText(document.getElementById('mout').value).catch(()=>{});
-  const b=document.getElementById('copybtn'); b.textContent='Copied!';
-  setTimeout(()=>b.textContent='Copy to clipboard',1800);
+  edges.push(edge);
+  redrawEdge(edge);
+  updateStatus();
 }
 
-// ─── seed example ──────────────────────────────────────────────────────────
-window.addEventListener('load',()=>{
-  const cx = wrap.clientWidth/2;
-  const s  = addNode('terminal', cx-60,  40, 'Start');
-  const d  = addNode('decision', cx-80, 160, 'Is invoice ≥ $500?');
-  const a  = addNode('action',   cx-240, 310, 'Under $500 floor — expected');
-  const b  = addNode('step',     cx+60,  310, 'Check vendor GL / code');
-  const e2 = addNode('terminal', cx-60,  450, 'Resolved');
+// ─── Edge click → label ───────────────────────────────────────────────────────
+function onEdgeClick(e) {
+  e.stopPropagation();
+  const edgeId = e.currentTarget.dataset.edgeId;
+  const edge = edges.find(ed => ed.id === edgeId);
+  if (!edge) return;
 
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{
-    const mkEdge=(from,fp,to,tp,lbl)=>{
-      const id='e'+(++eid);
-      const pathEl=document.createElementNS('http://www.w3.org/2000/svg','path');
-      pathEl.setAttribute('fill','none');
-      pathEl.setAttribute('stroke','#6B7280');
-      pathEl.setAttribute('stroke-width','2');
-      pathEl.setAttribute('marker-end','url(#arr)');
-      pathEl.style.cursor='pointer';
-      sv.appendChild(pathEl);
-      const lblEl=document.createElement('div');
-      lblEl.className='elabel'; lblEl.contentEditable='true'; lblEl.spellcheck=false;
-      lblEl.textContent=lbl||'';
-      nl.appendChild(lblEl);
-      lblEl.addEventListener('mousedown',e=>e.stopPropagation());
-      lblEl.addEventListener('keydown',e=>e.stopPropagation());
-      const edge={id,from,fp,to,tp,pathEl,lblEl};
-      edges.push(edge);
-      pathEl.addEventListener('mousedown',e=>{e.stopPropagation();selectEdge(edge);});
-      refreshEdge(edge);
-    };
-    mkEdge(s,'b',d,'t','');
-    mkEdge(d,'l',a,'t','No');
-    mkEdge(d,'r',b,'t','Yes');
-    mkEdge(a,'b',e2,'l','');
-    mkEdge(b,'b',e2,'r','');
-  }));
+  const inp = document.getElementById('edge-label-input');
+  inp.value = edge.label;
+  const pt = c2w(e.clientX, e.clientY);
+  const wr = wrap.getBoundingClientRect();
+  inp.style.left = (wr.left + pt.x) + 'px';
+  inp.style.top  = (wr.top  + pt.y - 16) + 'px';
+  inp.style.display = 'block';
+  inp.focus();
+
+  inp.onkeydown = ev => {
+    if (ev.key === 'Enter') {
+      edge.label = inp.value.trim();
+      inp.style.display = 'none';
+      redrawEdge(edge);
+    }
+    if (ev.key === 'Escape') {
+      inp.style.display = 'none';
+    }
+  };
+  inp.onblur = () => {
+    edge.label = inp.value.trim();
+    inp.style.display = 'none';
+    redrawEdge(edge);
+  };
+}
+
+// ─── Draw edges ───────────────────────────────────────────────────────────────
+function curvePath(x1, y1, x2, y2) {
+  const dx = Math.abs(x2 - x1);
+  const dy = Math.abs(y2 - y1);
+  const cx1 = x1 + (x2>x1 ? Math.min(dx*0.6,80) : -Math.min(dx*0.6,80));
+  const cy1 = y1 + (y2>y1 ? Math.min(dy*0.6,80) : -Math.min(dy*0.6,80));
+  // Use simpler elbows for clean routing
+  const mx = (x1 + x2) / 2;
+  const my = (y1 + y2) / 2;
+  return `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`;
+}
+
+function redrawEdge(edge) {
+  const p1 = portCenter(edge.from, edge.fromPort);
+  const p2 = portCenter(edge.to,   edge.toPort);
+  edge.pathEl.setAttribute('d', curvePath(p1.x, p1.y, p2.x, p2.y));
+
+  // Label position = midpoint
+  const mx = (p1.x + p2.x) / 2;
+  const my = (p1.y + p2.y) / 2;
+  if (edge.label) {
+    edge.labelEl.textContent = edge.label;
+    edge.labelEl.style.display = '';
+    edge.labelEl.style.left = mx + 'px';
+    edge.labelEl.style.top  = my + 'px';
+  } else {
+    edge.labelEl.style.display = 'none';
+  }
+}
+
+function redrawEdges() {
+  edges.forEach(redrawEdge);
+}
+
+// ─── Node double-click → edit ─────────────────────────────────────────────────
+function onNodeDblclick(e) {
+  if (e.target.classList.contains('port')) return;
+  const el = e.currentTarget;
+  const id = el.dataset.id;
+  const n = nodes[id];
+  const textEl = n.textEl;
+
+  const ta = document.createElement('textarea');
+  ta.className = 'node-edit-input';
+  ta.value = n.label;
+  ta.rows = 2;
+  textEl.replaceWith(ta);
+  ta.focus();
+  ta.select();
+
+  function done() {
+    n.label = ta.value.trim() || n.label;
+    textEl.textContent = n.label;
+    ta.replaceWith(textEl);
+    n.textEl = textEl;
+    redrawEdges();
+  }
+  ta.addEventListener('blur', done);
+  ta.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); done(); }
+    if (ev.key === 'Escape') { ta.value = n.label; done(); }
+  });
+}
+
+// ─── Keyboard shortcuts ───────────────────────────────────────────────────────
+document.addEventListener('keydown', e => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'v' || e.key === 'V') setMode('select');
+  if (e.key === 'c' || e.key === 'C') setMode('connect');
+  if ((e.key === 'Delete' || e.key === 'Backspace') && mode === 'select') deleteSelected();
+  if (e.key === 'Escape') cancelConn();
 });
+
+function deleteSelected() {
+  const sel = canvas.querySelector('.node.selected');
+  if (!sel) return;
+  const id = sel.dataset.id;
+  // Remove edges connected to this node
+  edges = edges.filter(edge => {
+    if (edge.from === id || edge.to === id) {
+      edge.pathEl.remove();
+      edge.labelEl.remove();
+      return false;
+    }
+    return true;
+  });
+  sel.remove();
+  delete nodes[id];
+  updateStatus();
+}
+
+// Canvas click = deselect
+canvas.addEventListener('click', e => {
+  if (!e.target.closest('.node')) selectNode(null);
+});
+
+// ─── Status ───────────────────────────────────────────────────────────────────
+function updateStatus() {
+  document.getElementById('st-nodes').textContent = Object.keys(nodes).length;
+  document.getElementById('st-edges').textContent = edges.length;
+}
+
+// ─── Clear ────────────────────────────────────────────────────────────────────
+function clearCanvas() {
+  if (!confirm('Clear all nodes and connections?')) return;
+  Object.values(nodes).forEach(n => n.el.remove());
+  nodes = {};
+  edges.forEach(e => { e.pathEl.remove(); e.labelEl.remove(); });
+  edges = [];
+  nodeCounter = 0;
+  edgeCounter = 0;
+  updateStatus();
+}
+
+// ─── Export SVG ───────────────────────────────────────────────────────────────
+function exportSVG() {
+  if (Object.keys(nodes).length === 0) { alert('Add some nodes first.'); return; }
+
+  // Compute bounding box
+  const wr = wrap.getBoundingClientRect();
+  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+  Object.values(nodes).forEach(n => {
+    const r = n.el.getBoundingClientRect();
+    const nx = r.left - wr.left, ny = r.top - wr.top;
+    minX = Math.min(minX, nx); minY = Math.min(minY, ny);
+    maxX = Math.max(maxX, nx + r.width); maxY = Math.max(maxY, ny + r.height);
+  });
+  const pad = 40;
+  minX -= pad; minY -= pad; maxX += pad; maxY += pad;
+  const W = maxX - minX, H = maxY - minY;
+
+  const svgParts = [
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`,
+    `<defs>`,
+    `<marker id="arr" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">`,
+    `<polygon points="0 0, 10 3.5, 0 7" fill="#6B7280"/>`,
+    `</marker>`,
+    `</defs>`,
+    `<rect x="0" y="0" width="${W}" height="${H}" fill="#f5f4f0"/>`,
+  ];
+
+  // Edges
+  edges.forEach(edge => {
+    const p1 = portCenter(edge.from, edge.fromPort);
+    const p2 = portCenter(edge.to,   edge.toPort);
+    const x1 = p1.x - minX, y1 = p1.y - minY;
+    const x2 = p2.x - minX, y2 = p2.y - minY;
+    const my = (y1+y2)/2;
+    svgParts.push(`<path d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}" stroke="#6B7280" stroke-width="2" fill="none" marker-end="url(#arr)"/>`);
+    if (edge.label) {
+      const mx = (x1+x2)/2;
+      svgParts.push(`<rect x="${mx-edge.label.length*3.5-4}" y="${my-9}" width="${edge.label.length*7+8}" height="16" rx="3" fill="white" stroke="#e0e0e0"/>`);
+      svgParts.push(`<text x="${mx}" y="${my+3}" text-anchor="middle" font-size="11" font-family="Inter,system-ui,sans-serif" fill="#555">${esc(edge.label)}</text>`);
+    }
+  });
+
+  // Nodes
+  Object.values(nodes).forEach(n => {
+    const r = n.el.getBoundingClientRect();
+    const nx = r.left - wr.left - minX;
+    const ny = r.top - wr.top - minY;
+    const nw = r.width, nh = r.height;
+    const styles = {
+      step:     { fill:'#ffffff', stroke:'#D1D5DB', rx:6 },
+      decision: { fill:'#FFFBEB', stroke:'#FCD34D', rx:4 },
+      terminal: { fill:'#F0FDF4', stroke:'#86EFAC', rx:nh/2 },
+      action:   { fill:'#EFF6FF', stroke:'#93C5FD', rx:3 },
+    };
+    const s = styles[n.shape] || styles.step;
+
+    if (n.shape === 'decision') {
+      // Draw as diamond
+      const cx = nx + nw/2, cy = ny + nh/2;
+      const hw = nw/2, hh = nh/2;
+      svgParts.push(`<polygon points="${cx},${ny} ${nx+nw},${cy} ${cx},${ny+nh} ${nx},${cy}" fill="${s.fill}" stroke="${s.stroke}" stroke-width="1.5"/>`);
+      svgParts.push(`<foreignObject x="${nx+8}" y="${ny+8}" width="${nw-16}" height="${nh-16}"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;font-family:Inter,system-ui,sans-serif;text-align:center;word-wrap:break-word;">${esc(n.label)}</div></foreignObject>`);
+    } else {
+      svgParts.push(`<rect x="${nx}" y="${ny}" width="${nw}" height="${nh}" rx="${s.rx}" fill="${s.fill}" stroke="${s.stroke}" stroke-width="1.5"/>`);
+      // Text (wrapped)
+      const words = n.label.split(' ');
+      const lineH = 16, maxW = nw - 16;
+      let lines = [], cur = '';
+      words.forEach(w => {
+        const test = cur ? cur + ' ' + w : w;
+        if (test.length * 7 > maxW && cur) { lines.push(cur); cur = w; }
+        else cur = test;
+      });
+      if (cur) lines.push(cur);
+      const totalH = lines.length * lineH;
+      const startY = ny + nh/2 - totalH/2 + lineH/2 + 4;
+      lines.forEach((line, i) => {
+        svgParts.push(`<text x="${nx + nw/2}" y="${startY + i*lineH}" text-anchor="middle" font-size="13" font-family="Inter,system-ui,sans-serif" fill="#1B2B4B">${esc(line)}</text>`);
+      });
+    }
+  });
+
+  svgParts.push('</svg>');
+  const svgStr = svgParts.join('\n');
+  const blob = new Blob([svgStr], {type:'image/svg+xml'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'flowchart.svg'; a.click();
+  URL.revokeObjectURL(url);
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+// ─── Mermaid export ───────────────────────────────────────────────────────────
+function showMermaid() {
+  let lines = ['flowchart TD'];
+  Object.values(nodes).forEach(n => {
+    const lbl = n.label.replace(/"/g,"'");
+    const shapes = {
+      step:     `["${lbl}"]`,
+      decision: `{"${lbl}"}`,
+      terminal: `(["${lbl}"])`,
+      action:   `["${lbl}"]`,
+    };
+    lines.push(`  ${n.id}${shapes[n.shape] || `["${lbl}"]`}`);
+  });
+  edges.forEach(e => {
+    const arrow = e.label ? `-- ${e.label} -->` : '-->';
+    lines.push(`  ${e.from} ${arrow} ${e.to}`);
+  });
+  document.getElementById('mermaid-out').value = lines.join('\n');
+  document.getElementById('mermaid-modal').classList.add('open');
+}
+function closeMermaid() { document.getElementById('mermaid-modal').classList.remove('open'); }
+function copyMermaid() {
+  const ta = document.getElementById('mermaid-out');
+  ta.select();
+  document.execCommand('copy');
+  alert('Copied!');
+}
+
+// ─── Sample flowchart ─────────────────────────────────────────────────────────
+function loadSample() {
+  clearCanvas();
+
+  const cx = wrap.offsetWidth / 2;
+  const cy = 60;
+  const g = 130;
+
+  const s = addNode('terminal', cx-70, cy, 'Invoice Received');
+  const q1 = addNode('decision', cx-55, cy+g, 'Is it imported?');
+  const imp = addNode('step', cx-160, cy+g*2, 'Check import log');
+  const man = addNode('step', cx+30, cy+g*2, 'Tag & notify vendor');
+  const q2 = addNode('decision', cx-55, cy+g*3, 'Amount > $500?');
+  const rev = addNode('step', cx-160, cy+g*4, 'Flag for review');
+  const ok  = addNode('terminal', cx+30, cy+g*4, 'Approve Invoice');
+
+  // Edges
+  setTimeout(() => {
+    conn = {fromId:s, fromPort:'s', startX:0, startY:0};
+    finishConn(q1, 'n'); conn=null;
+
+    conn = {fromId:q1, fromPort:'w', startX:0, startY:0};
+    finishConn(imp, 'n'); conn=null;
+    edges[edges.length-1].label='Yes';
+    redrawEdge(edges[edges.length-1]);
+
+    conn = {fromId:q1, fromPort:'e', startX:0, startY:0};
+    finishConn(man, 'n'); conn=null;
+    edges[edges.length-1].label='No';
+    redrawEdge(edges[edges.length-1]);
+
+    conn = {fromId:imp, fromPort:'s', startX:0, startY:0};
+    finishConn(q2, 'n'); conn=null;
+
+    conn = {fromId:man, fromPort:'s', startX:0, startY:0};
+    finishConn(q2, 'e'); conn=null;
+
+    conn = {fromId:q2, fromPort:'w', startX:0, startY:0};
+    finishConn(rev, 'n'); conn=null;
+    edges[edges.length-1].label='>$500';
+    redrawEdge(edges[edges.length-1]);
+
+    conn = {fromId:q2, fromPort:'e', startX:0, startY:0};
+    finishConn(ok, 'n'); conn=null;
+    edges[edges.length-1].label='≤$500';
+    redrawEdge(edges[edges.length-1]);
+
+    updateStatus();
+  }, 50);
+}
+
+// ─── Canvas background click ──────────────────────────────────────────────────
+wrap.addEventListener('click', e => {
+  if (e.target === wrap || e.target === canvas) selectNode(null);
+});
+
+// ─── Copy Mermaid directly (no modal) ────────────────────────────────────────
+function copyMermaidDirect() {
+  if (Object.keys(nodes).length === 0) { showToast('Add some nodes first.', 'warn'); return; }
+  let lines = ['flowchart TD'];
+  Object.values(nodes).forEach(n => {
+    const lbl = n.label.replace(/"/g,"'");
+    const shapes = {
+      step:     `["${lbl}"]`,
+      decision: `{"${lbl}"}`,
+      terminal: `(["${lbl}"])`,
+      action:   `["${lbl}"]`,
+    };
+    lines.push(`  ${n.id}${shapes[n.shape] || `["${lbl}"]`}`);
+  });
+  edges.forEach(e => {
+    const arrow = e.label ? `-- ${e.label} -->` : '-->';
+    lines.push(`  ${e.from} ${arrow} ${e.to}`);
+  });
+  const code = lines.join('\n');
+  navigator.clipboard.writeText(code).then(() => {
+    showToast('Mermaid code copied!', 'ok');
+  }).catch(() => {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = code; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Mermaid code copied!', 'ok');
+  });
+}
+
+// ─── Save to Notion ───────────────────────────────────────────────────────────
+const NOTION_DB_URL = 'https://app.notion.com/p/73b895456021436981e354dfa3916bef';
+function saveToNotion() {
+  // Copy mermaid first so it's ready to paste
+  copyMermaidDirect();
+  setTimeout(() => {
+    window.open(NOTION_DB_URL, '_blank');
+  }, 400);
+}
+
+// ─── Toast ────────────────────────────────────────────────────────────────────
+function showToast(msg, type) {
+  let t = document.getElementById('toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'toast';
+    t.style.cssText = 'position:fixed;bottom:48px;left:50%;transform:translateX(-50%);padding:8px 18px;border-radius:8px;font-size:13px;font-family:inherit;z-index:9999;transition:opacity 0.3s;pointer-events:none;';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.style.background = type === 'ok' ? '#1B2B4B' : '#E8503A';
+  t.style.color = '#fff';
+  t.style.opacity = '1';
+  clearTimeout(t._hide);
+  t._hide = setTimeout(() => { t.style.opacity = '0'; }, 2200);
+}
+
+// ─── Init ─────────────────────────────────────────────────────────────────────
+loadSample();
 </script>
 </body>
 </html>
