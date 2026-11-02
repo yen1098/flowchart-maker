@@ -10,280 +10,106 @@
 
   /* Top bar */
   #topbar {
-    background: #1B2B4B;
-    color: #fff;
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    padding: 0 16px;
-    height: 52px;
-    flex-shrink: 0;
-    user-select: none;
+    background: #1B2B4B; color: #fff;
+    display: flex; align-items: center; gap: 12px;
+    padding: 0 16px; height: 52px; flex-shrink: 0; user-select: none;
   }
   #topbar .logo { font-weight: 700; font-size: 15px; letter-spacing: 0.5px; margin-right: 8px; }
   #topbar .logo span { color: #E8503A; }
   #topbar .sep { width: 1px; height: 28px; background: rgba(255,255,255,0.2); }
   .tb-btn {
-    background: rgba(255,255,255,0.1);
-    border: none;
-    color: #fff;
-    padding: 5px 12px;
-    border-radius: 6px;
-    cursor: pointer;
-    font-size: 13px;
-    font-family: inherit;
-    transition: background 0.15s;
+    background: rgba(255,255,255,0.1); border: none; color: #fff;
+    padding: 5px 12px; border-radius: 6px; cursor: pointer;
+    font-size: 13px; font-family: inherit; transition: background 0.15s;
   }
   .tb-btn:hover { background: rgba(255,255,255,0.2); }
-  .tb-btn.primary { background: #E8503A; }
-  .tb-btn.primary:hover { background: #d4472f; }
   .tb-btn.notion-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.3); }
   .tb-btn.notion-btn:hover { background: rgba(255,255,255,0.25); }
   #topbar .spacer { flex: 1; }
-  #mode-label { font-size: 12px; opacity: 0.6; }
 
-  /* Shape palette */
+  /* Palette */
   #palette {
-    background: #fff;
-    border-bottom: 1px solid #e5e5e5;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 8px 16px;
-    flex-shrink: 0;
+    background: #fff; border-bottom: 1px solid #e5e5e5;
+    display: flex; align-items: center; gap: 8px;
+    padding: 8px 16px; flex-shrink: 0;
   }
   #palette .pal-label { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.8px; color: #888; margin-right: 4px; }
   .shape-btn {
-    display: flex;
-    align-items: center;
-    gap: 7px;
-    padding: 5px 12px;
-    border: 1.5px solid #e0e0e0;
-    border-radius: 6px;
-    background: #fafafa;
-    cursor: pointer;
-    font-size: 12px;
-    font-family: inherit;
-    color: #333;
+    display: flex; align-items: center; gap: 7px;
+    padding: 5px 12px; border: 1.5px solid #e0e0e0; border-radius: 6px;
+    background: #fafafa; cursor: pointer; font-size: 12px; font-family: inherit; color: #333;
     transition: all 0.15s;
   }
   .shape-btn:hover { border-color: #1B2B4B; background: #f0f0f0; }
   .shape-btn svg { flex-shrink: 0; }
+  .kbd {
+    display: inline-block; background: #e8e8e8; color: #666;
+    border-radius: 3px; font-size: 10px; font-weight: 700;
+    padding: 1px 4px; margin-left: 2px; line-height: 1.4;
+    font-family: 'Courier New', monospace;
+  }
   #palette .sep { width: 1px; height: 28px; background: #e5e5e5; margin: 0 4px; }
   .mode-btn {
-    padding: 5px 12px;
-    border: 1.5px solid #e0e0e0;
-    border-radius: 6px;
-    background: #fafafa;
-    cursor: pointer;
-    font-size: 12px;
-    font-family: inherit;
-    color: #555;
+    padding: 5px 12px; border: 1.5px solid #e0e0e0; border-radius: 6px;
+    background: #fafafa; cursor: pointer; font-size: 12px; font-family: inherit; color: #555;
+    display: flex; align-items: center; gap: 6px;
   }
   .mode-btn.active { background: #1B2B4B; color: #fff; border-color: #1B2B4B; }
+  .mode-btn.active .kbd { background: rgba(255,255,255,0.25); color: #fff; }
 
-  /* Canvas area */
+  /* Canvas */
   #canvas-wrap {
-    flex: 1;
-    position: relative;
-    overflow: hidden;
+    flex: 1; position: relative; overflow: hidden;
     background: #f5f4f0;
     background-image: radial-gradient(circle, #ccc 1px, transparent 1px);
     background-size: 24px 24px;
+    cursor: default;
   }
-  #canvas {
-    position: absolute;
-    top: 0; left: 0;
+  #canvas-wrap.connect-mode { cursor: crosshair; }
+
+  /* SVG fills the wrap — nodes AND edges live here */
+  #main-svg {
+    position: absolute; top: 0; left: 0;
     width: 100%; height: 100%;
+    overflow: visible;
   }
 
-  /* SVG layer for connections */
-  #svg-layer {
-    position: absolute;
-    top: 0; left: 0;
-    width: 100%; height: 100%;
-    pointer-events: none;
-  }
-  #svg-layer path { pointer-events: stroke; }
-
-  /* Nodes */
-  .node {
-    position: absolute;
-    min-width: 140px;
-    max-width: 240px;
-    cursor: grab;
-    user-select: none;
-  }
-  .node:active { cursor: grabbing; }
-  .node.selected > .node-body { outline: 2px solid #E8503A; outline-offset: 2px; }
-
-  .node-body {
-    border-radius: 6px;
-    padding: 10px 14px;
-    font-size: 13px;
-    line-height: 1.4;
-    text-align: center;
-    border: 1.5px solid #D1D5DB;
-    background: #fff;
-    word-wrap: break-word;
-    position: relative;
-  }
-  .node[data-shape="decision"] .node-body {
-    background: #FFFBEB;
-    border-color: #FCD34D;
-    border-radius: 4px;
-    transform: rotate(45deg);
-    width: 110px;
-    height: 110px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 8px;
-  }
-  .node[data-shape="decision"] .node-text {
-    transform: rotate(-45deg);
-    display: block;
-    font-size: 12px;
-    line-height: 1.3;
-  }
-  .node[data-shape="terminal"] .node-body {
-    background: #F0FDF4;
-    border-color: #86EFAC;
-    border-radius: 50px;
-  }
-  .node[data-shape="action"] .node-body {
-    background: #EFF6FF;
-    border-color: #93C5FD;
-    border-radius: 3px;
+  /* Rubber-band selection box */
+  #selbox {
+    display: none; position: absolute;
+    border: 1.5px dashed #E8503A;
+    background: rgba(232,80,58,0.07);
+    pointer-events: none; z-index: 50;
   }
 
-  /* Ports */
-  .port {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: #fff;
-    border: 2px solid #9CA3AF;
-    border-radius: 50%;
-    cursor: crosshair;
-    transition: border-color 0.1s, background 0.1s;
-    z-index: 10;
-    pointer-events: all;
-  }
-  .port:hover, .port.highlight { border-color: #E8503A; background: #E8503A; }
-  /* Normal node ports */
-  .node:not([data-shape="decision"]) .port-n { top: -6px; left: 50%; transform: translateX(-50%); }
-  .node:not([data-shape="decision"]) .port-s { bottom: -6px; left: 50%; transform: translateX(-50%); }
-  .node:not([data-shape="decision"]) .port-e { right: -6px; top: 50%; transform: translateY(-50%); }
-  .node:not([data-shape="decision"]) .port-w { left: -6px; top: 50%; transform: translateY(-50%); }
-  /* Decision node ports — placed on the diamond tips */
-  .node[data-shape="decision"] .port-n { top: -6px; left: 50%; transform: translateX(-50%); }
-  .node[data-shape="decision"] .port-s { bottom: -6px; left: 50%; transform: translateX(-50%); }
-  .node[data-shape="decision"] .port-e { right: -6px; top: 50%; transform: translateY(-50%); }
-  .node[data-shape="decision"] .port-w { left: -6px; top: 50%; transform: translateY(-50%); }
-
-  /* Edge labels */
+  /* Edge labels (HTML overlay) */
   .edge-label {
-    position: absolute;
-    font-size: 11px;
-    background: #fff;
-    border: 1px solid #e0e0e0;
-    border-radius: 4px;
-    padding: 1px 5px;
-    color: #555;
-    pointer-events: none;
-    transform: translate(-50%, -50%);
+    position: absolute; font-size: 11px;
+    background: #fff; border: 1px solid #e0e0e0;
+    border-radius: 4px; padding: 1px 5px; color: #555;
+    pointer-events: none; transform: translate(-50%,-50%);
     white-space: nowrap;
   }
 
-  /* Modals */
-  .modal-bg {
-    display: none;
-    position: fixed;
-    inset: 0;
-    background: rgba(0,0,0,0.4);
-    z-index: 1000;
-    align-items: center;
-    justify-content: center;
-  }
-  .modal-bg.open { display: flex; }
-  .modal {
-    background: #fff;
-    border-radius: 10px;
-    padding: 24px;
-    width: 480px;
-    max-width: 95vw;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
-  }
-  .modal h3 { font-size: 16px; margin-bottom: 16px; color: #1B2B4B; }
-  .modal textarea {
-    width: 100%;
-    font-family: 'Courier New', monospace;
-    font-size: 12px;
-    border: 1px solid #ddd;
-    border-radius: 6px;
-    padding: 10px;
-    resize: vertical;
-    min-height: 260px;
-    color: #333;
-  }
-  .modal-actions { display: flex; gap: 8px; margin-top: 12px; justify-content: flex-end; }
-  .modal-btn {
-    padding: 7px 18px;
-    border-radius: 6px;
-    border: none;
-    cursor: pointer;
-    font-size: 13px;
-    font-family: inherit;
-  }
-  .modal-btn.primary { background: #E8503A; color: #fff; }
-  .modal-btn.secondary { background: #f0f0f0; color: #333; }
-
-  /* Label editor */
+  /* Edge label input */
   #edge-label-input {
-    display: none;
-    position: fixed;
-    z-index: 500;
-    background: #fff;
-    border: 1.5px solid #E8503A;
-    border-radius: 6px;
-    padding: 4px 8px;
-    font-size: 12px;
-    font-family: inherit;
-    outline: none;
-    min-width: 80px;
-  }
-
-  /* Inline text editor */
-  .node-edit-input {
-    border: none;
-    background: transparent;
-    text-align: center;
-    font-size: 13px;
-    font-family: inherit;
-    width: 100%;
-    outline: none;
-    line-height: 1.4;
-    resize: none;
-    overflow: hidden;
+    display: none; position: fixed; z-index: 500;
+    background: #fff; border: 1.5px solid #E8503A;
+    border-radius: 6px; padding: 4px 8px; font-size: 12px;
+    font-family: inherit; outline: none; min-width: 80px;
   }
 
   /* Status bar */
   #statusbar {
-    background: #1B2B4B;
-    color: rgba(255,255,255,0.6);
-    font-size: 11px;
-    padding: 4px 16px;
-    display: flex;
-    gap: 16px;
-    flex-shrink: 0;
+    background: #1B2B4B; color: rgba(255,255,255,0.6);
+    font-size: 11px; padding: 4px 16px;
+    display: flex; gap: 16px; flex-shrink: 0;
   }
   #statusbar span b { color: #fff; }
 </style>
 </head>
 <body>
 
-<!-- Top bar -->
 <div id="topbar">
   <div class="logo"><span>B</span>anner</div>
   <div class="logo" style="font-weight:400;font-size:13px;opacity:0.7">Flowchart Builder</div>
@@ -291,723 +117,847 @@
   <button class="tb-btn" onclick="clearCanvas()">🗑 Clear</button>
   <button class="tb-btn" onclick="loadSample()">📋 Sample</button>
   <div class="spacer"></div>
-  <span id="mode-label">V = Select · C = Connect · Del = Delete · Esc = Cancel</span>
+  <span style="font-size:12px;opacity:0.5">Del = delete · Esc = cancel</span>
   <div class="sep"></div>
-  <button class="tb-btn" onclick="copyMermaidDirect()" title="Copy Mermaid code to clipboard">📋 Copy Mermaid</button>
-  <button class="tb-btn" onclick="exportSVG()">⬇ Export SVG</button>
-  <div class="sep"></div>
-  <button class="tb-btn notion-btn" onclick="saveToNotion()" title="Open Flowchart Library in Notion">
+  <button class="tb-btn notion-btn" onclick="saveToNotion()">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="display:inline;vertical-align:-2px;margin-right:5px"><rect x="1" y="1" width="12" height="12" rx="2" fill="white" opacity="0.9"/><path d="M3.5 3.5h4l3 3.5-3 3.5h-4v-7z" fill="#1B2B4B" opacity="0.7"/></svg>
     Save to Notion
   </button>
 </div>
 
-<!-- Shape palette -->
 <div id="palette">
   <span class="pal-label">Add Shape</span>
   <button class="shape-btn" onclick="addNode('step')">
     <svg width="16" height="12"><rect x="0" y="0" width="16" height="12" rx="2" fill="#fff" stroke="#D1D5DB" stroke-width="1.5"/></svg>
-    Step
+    Step <span class="kbd">S</span>
   </button>
   <button class="shape-btn" onclick="addNode('decision')">
     <svg width="16" height="16"><polygon points="8,0 16,8 8,16 0,8" fill="#FFFBEB" stroke="#FCD34D" stroke-width="1.5"/></svg>
-    Decision
+    Decision <span class="kbd">D</span>
   </button>
   <button class="shape-btn" onclick="addNode('terminal')">
     <svg width="20" height="12"><rect x="0" y="0" width="20" height="12" rx="6" fill="#F0FDF4" stroke="#86EFAC" stroke-width="1.5"/></svg>
-    Terminal
+    Terminal <span class="kbd">T</span>
   </button>
   <button class="shape-btn" onclick="addNode('action')">
     <svg width="16" height="12"><rect x="0" y="0" width="16" height="12" rx="1" fill="#EFF6FF" stroke="#93C5FD" stroke-width="1.5"/></svg>
-    Action
+    Action <span class="kbd">A</span>
   </button>
   <div class="sep"></div>
-  <button class="mode-btn active" id="btn-select" onclick="setMode('select')">✦ Select</button>
-  <button class="mode-btn" id="btn-connect" onclick="setMode('connect')">⤳ Connect</button>
+  <button class="mode-btn active" id="btn-select" onclick="setMode('select')">✦ Select <span class="kbd">V</span></button>
+  <button class="mode-btn" id="btn-connect" onclick="setMode('connect')">⤳ Connect <span class="kbd">C</span></button>
 </div>
 
-<!-- Canvas -->
 <div id="canvas-wrap">
-  <svg id="svg-layer" xmlns="http://www.w3.org/2000/svg">
+  <div id="selbox"></div>
+  <svg id="main-svg" xmlns="http://www.w3.org/2000/svg">
     <defs>
-      <marker id="arrow" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-        <polygon points="0 0, 10 3.5, 0 7" fill="#6B7280"/>
+      <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+        <polygon points="0 0, 8 3, 0 6" fill="#6B7280"/>
       </marker>
-      <marker id="arrow-preview" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">
-        <polygon points="0 0, 10 3.5, 0 7" fill="#E8503A"/>
+      <marker id="arrow-sel" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+        <polygon points="0 0, 8 3, 0 6" fill="#E8503A"/>
+      </marker>
+      <marker id="arrow-pre" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
+        <polygon points="0 0, 8 3, 0 6" fill="#E8503A"/>
       </marker>
     </defs>
-    <path id="preview-line" d="" stroke="#E8503A" stroke-width="1.5" stroke-dasharray="6,4" fill="none" marker-end="url(#arrow-preview)" style="display:none"/>
+    <!-- edges group (behind nodes) -->
+    <g id="edges-g"></g>
+    <!-- nodes group -->
+    <g id="nodes-g"></g>
+    <!-- preview line (always on top) -->
+    <path id="preview-line" d="" stroke="#E8503A" stroke-width="1.5"
+          stroke-dasharray="6,4" fill="none" marker-end="url(#arrow-pre)"
+          style="display:none; pointer-events:none"/>
+    <!-- freehand draw path -->
+    <path id="freehand-path" d="" stroke="#E8503A" stroke-width="2"
+          stroke-dasharray="5,4" fill="none" stroke-linecap="round"
+          style="display:none; pointer-events:none"/>
   </svg>
-  <div id="canvas"></div>
 </div>
 
-<!-- Status bar -->
 <div id="statusbar">
   <span>Nodes: <b id="st-nodes">0</b></span>
   <span>Connections: <b id="st-edges">0</b></span>
   <span>Mode: <b id="st-mode">Select</b></span>
-  <span style="margin-left:auto;opacity:0.5">Double-click node to edit label · Click connection to add label</span>
+  <span style="margin-left:auto;opacity:0.5">Double-click node to edit · Click edge to select · Double-click edge to label · Drag-select or click to select, then Del to delete</span>
 </div>
 
-<!-- Mermaid modal -->
-<div class="modal-bg" id="mermaid-modal">
-  <div class="modal">
-    <h3>Mermaid Code</h3>
-    <textarea id="mermaid-out" readonly></textarea>
-    <div class="modal-actions">
-      <button class="modal-btn secondary" onclick="closeMermaid()">Close</button>
-      <button class="modal-btn primary" onclick="copyMermaid()">Copy</button>
-    </div>
-  </div>
-</div>
-
-<!-- Edge label input -->
-<input id="edge-label-input" type="text" placeholder="Label (Enter to set)">
+<input id="edge-label-input" type="text" placeholder="Label (Enter to save, Esc to cancel)">
 
 <script>
-// ─── State ───────────────────────────────────────────────────────────────────
-let nodes = {};      // id → {id, shape, x, y, label, el}
-let edges = [];      // {id, from, fromPort, to, toPort, label, pathEl, labelEl}
-let nodeCounter = 0;
-let edgeCounter = 0;
-let mode = 'select'; // 'select' | 'connect'
+// ─── Constants ────────────────────────────────────────────────────────────────
+// Node default dimensions (used for port math without DOM queries on rotated els)
+const NODE_W  = 140;  // step / action / terminal width
+const NODE_H  = 40;   // step / action height
+const TERM_H  = 36;   // terminal height
+const DIAM_W  = 120;  // decision bounding box width
+const DIAM_H  = 70;   // decision bounding box height
+// Arrow setback: shorten path end so arrowhead doesn't overlap node border
+const SETBACK = 9;
 
-// Drag state
-let drag = null;     // {nodeId, ox, oy}  (offset from node top-left to click point in wrap coords)
+// ─── State ────────────────────────────────────────────────────────────────────
+let nodes         = {};   // id → {id, shape, x, y, w, h, label, g, bodyEl, textEl}
+let edges         = [];   // {id, from, fromPort, to, toPort, label, pathEl, labelEl}
+let selected      = new Set(); // selected node ids
+let selectedEdges = new Set(); // selected edge ids
+let nodeCounter = 0, edgeCounter = 0;
+let mode = 'select';
+let drag = null;     // {startPt, nodeStarts:{id:{x,y}}}
+let conn = null;     // {fromId, fromPort}
+let snapPort = null; // {nodeId, port}
+let selBox   = null; // {startX,startY,curX,curY}
+let freehand = null; // {pts:[{x,y}]}
 
-// Connection state
-let conn = null;     // {fromId, fromPort, startX, startY}
-let snapPort = null; // {nodeId, port} currently snapping
+const wrap      = document.getElementById('canvas-wrap');
+const mainSvg   = document.getElementById('main-svg');
+const edgesG    = document.getElementById('edges-g');
+const nodesG    = document.getElementById('nodes-g');
+const previewLn = document.getElementById('preview-line');
+const freehandP = document.getElementById('freehand-path');
+const selBoxEl  = document.getElementById('selbox');
 
-const wrap = document.getElementById('canvas-wrap');
-const canvas = document.getElementById('canvas');
-const svgLayer = document.getElementById('svg-layer');
-const previewLine = document.getElementById('preview-line');
+// ─── SVG helpers ──────────────────────────────────────────────────────────────
+const SVG_NS = 'http://www.w3.org/2000/svg';
+function svgEl(tag, attrs={}) {
+  const el = document.createElementNS(SVG_NS, tag);
+  for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+  return el;
+}
 
-// ─── Coordinate helper ───────────────────────────────────────────────────────
+// ─── Coordinate helpers ───────────────────────────────────────────────────────
 function c2w(clientX, clientY) {
   const r = wrap.getBoundingClientRect();
   return { x: clientX - r.left, y: clientY - r.top };
 }
 
-function portCenter(nodeId, port) {
+// Port positions relative to node top-left (x,y)
+// All math uses stored node.x/y + node.w/node.h — no DOM getBoundingClientRect needed.
+function portOffset(node, port) {
+  const { w, h } = node;
+  return {
+    n: { x: w/2,   y: 0   },
+    s: { x: w/2,   y: h   },
+    e: { x: w,     y: h/2 },
+    w: { x: 0,     y: h/2 },
+  }[port];
+}
+
+function portPos(nodeId, port) {
   const n = nodes[nodeId];
   if (!n) return {x:0,y:0};
-  const r = n.el.getBoundingClientRect();
-  const wr = wrap.getBoundingClientRect();
-  const nx = r.left - wr.left;
-  const ny = r.top - wr.top;
-  const nw = r.width;
-  const nh = r.height;
-  const map = { n:{x:nw/2,y:0}, s:{x:nw/2,y:nh}, e:{x:nw,y:nh/2}, w:{x:0,y:nh/2} };
-  const off = map[port] || {x:nw/2,y:nh/2};
-  return { x: nx + off.x, y: ny + off.y };
+  const off = portOffset(n, port);
+  return { x: n.x + off.x, y: n.y + off.y };
 }
 
-// ─── Mode ────────────────────────────────────────────────────────────────────
+// Shorten a segment end by SETBACK px (so arrow tip sits on node border, not inside)
+function setback(x1, y1, x2, y2, amount) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.hypot(dx, dy);
+  if (len < amount + 1) return {x: x2, y: y2};
+  return { x: x2 - dx/len*amount, y: y2 - dy/len*amount };
+}
+
+// Rounded orthogonal path: elbow corners replaced with quadratic bezier arcs
+const CORNER_R = 16; // corner rounding radius
+
+function straightPath(x1, y1, x2, y2, fromPort, toPort) {
+  const fromV = fromPort === 'n' || fromPort === 's';
+  const toV   = toPort   === 'n' || toPort   === 's';
+  let pts;
+
+  if (Math.abs(y1-y2) < 2 && !fromV && !toV) {
+    pts = [[x1,y1],[x2,y2]];
+  } else if (Math.abs(x1-x2) < 2 && fromV && toV) {
+    pts = [[x1,y1],[x2,y2]];
+  } else if (fromV && toV) {
+    const my = (y1+y2)/2;
+    pts = [[x1,y1],[x1,my],[x2,my],[x2,y2]];
+  } else if (!fromV && !toV) {
+    const mx = (x1+x2)/2;
+    pts = [[x1,y1],[mx,y1],[mx,y2],[x2,y2]];
+  } else if (fromV) {
+    pts = [[x1,y1],[x1,y2],[x2,y2]];
+  } else {
+    pts = [[x1,y1],[x2,y1],[x2,y2]];
+  }
+
+  // Apply setback to last segment end
+  const last = pts.length - 1;
+  const prev = pts[last-1];
+  const end  = pts[last];
+  const sb   = setback(prev[0], prev[1], end[0], end[1], SETBACK);
+  pts[last]  = [sb.x, sb.y];
+
+  if (pts.length === 2) {
+    // Straight line, no corners
+    return `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} L${pts[1][0].toFixed(1)},${pts[1][1].toFixed(1)}`;
+  }
+
+  // Build path with rounded corners at each interior point
+  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for (let i = 1; i < pts.length - 1; i++) {
+    const prev = pts[i-1], cur = pts[i], next = pts[i+1];
+    // Vector from prev→cur and cur→next
+    const d1x = cur[0]-prev[0], d1y = cur[1]-prev[1];
+    const d2x = next[0]-cur[0], d2y = next[1]-cur[1];
+    const len1 = Math.hypot(d1x, d1y);
+    const len2 = Math.hypot(d2x, d2y);
+    const r = Math.min(CORNER_R, len1/2, len2/2);
+    // Point before corner (on incoming segment)
+    const bx = cur[0] - d1x/len1*r;
+    const by = cur[1] - d1y/len1*r;
+    // Point after corner (on outgoing segment)
+    const ax = cur[0] + d2x/len2*r;
+    const ay = cur[1] + d2y/len2*r;
+    d += ` L${bx.toFixed(1)},${by.toFixed(1)} Q${cur[0].toFixed(1)},${cur[1].toFixed(1)} ${ax.toFixed(1)},${ay.toFixed(1)}`;
+  }
+  const fin = pts[pts.length-1];
+  d += ` L${fin[0].toFixed(1)},${fin[1].toFixed(1)}`;
+  return d;
+}
+
+// ─── Mode ─────────────────────────────────────────────────────────────────────
 function setMode(m) {
   mode = m;
-  document.getElementById('btn-select').classList.toggle('active', m === 'select');
-  document.getElementById('btn-connect').classList.toggle('active', m === 'connect');
-  document.getElementById('st-mode').textContent = m === 'select' ? 'Select' : 'Connect';
-  if (m === 'select') cancelConn();
+  document.getElementById('btn-select').classList.toggle('active', m==='select');
+  document.getElementById('btn-connect').classList.toggle('active', m==='connect');
+  document.getElementById('st-mode').textContent = m==='select'?'Select':'Connect';
+  wrap.classList.toggle('connect-mode', m==='connect');
+  if (m==='select') { cancelConn(); cancelFreehand(); }
 }
 
-// ─── Add node ────────────────────────────────────────────────────────────────
+// ─── Selection ────────────────────────────────────────────────────────────────
+function selectNode(id, additive=false) {
+  if (!additive) deselectAll();
+  if (id) { selected.add(id); highlightNode(id, true); }
+}
+function deselectAll() {
+  selected.forEach(id => highlightNode(id, false));
+  selected.clear();
+  selectedEdges.forEach(id => highlightEdge(id, false));
+  selectedEdges.clear();
+}
+
+function highlightEdge(id, on) {
+  const edge = edges.find(e => e.id === id);
+  if (!edge) return;
+  edge.pathEl.setAttribute('stroke', on ? '#E8503A' : '#6B7280');
+  edge.pathEl.setAttribute('stroke-width', on ? '2.5' : '2');
+  edge.pathEl.setAttribute('marker-end', on ? 'url(#arrow-sel)' : 'url(#arrow)');
+}
+function highlightNode(id, on) {
+  const n = nodes[id];
+  if (!n) return;
+  if (on) n.bodyEl.setAttribute('stroke', '#E8503A'), n.bodyEl.setAttribute('stroke-width','2.5');
+  else     n.bodyEl.setAttribute('stroke', shapeStroke(n.shape)), n.bodyEl.setAttribute('stroke-width','1.5');
+}
+function shapeStroke(shape) {
+  return {step:'#D1D5DB',decision:'#FCD34D',terminal:'#86EFAC',action:'#93C5FD'}[shape]||'#D1D5DB';
+}
+function shapeFill(shape) {
+  return {step:'#ffffff',decision:'#FFFBEB',terminal:'#F0FDF4',action:'#EFF6FF'}[shape]||'#fff';
+}
+
+// ─── Node dimensions ──────────────────────────────────────────────────────────
+function nodeDims(shape) {
+  if (shape==='decision') return { w: DIAM_W, h: DIAM_H };
+  if (shape==='terminal') return { w: NODE_W, h: TERM_H };
+  return { w: NODE_W, h: NODE_H };
+}
+
+// ─── Add node ─────────────────────────────────────────────────────────────────
 function addNode(shape, x, y, label) {
-  const id = 'n' + (++nodeCounter);
-  if (!x) {
-    const cx = wrap.offsetWidth / 2 - 80 + Math.random()*40-20;
-    const cy = wrap.offsetHeight / 2 - 40 + Math.random()*40-20;
-    x = cx; y = cy;
+  const id = 'n'+(++nodeCounter);
+  const { w, h } = nodeDims(shape);
+  if (x==null) {
+    x = wrap.offsetWidth/2 - w/2 + (Math.random()*40-20);
+    y = wrap.offsetHeight/2 - h/2 + (Math.random()*40-20);
   }
-  label = label || shapeDefault(shape);
+  label = label || {step:'Step',decision:'Decision?',terminal:'Start/End',action:'Action'}[shape]||'Node';
 
-  const el = document.createElement('div');
-  el.className = 'node';
-  el.dataset.id = id;
-  el.dataset.shape = shape;
-  el.style.left = x + 'px';
-  el.style.top  = y + 'px';
+  const g = svgEl('g', { class:'node-g', 'data-id':id, 'data-shape':shape });
+  g.style.cursor = 'grab';
 
-  const body = document.createElement('div');
-  body.className = 'node-body';
+  let bodyEl;
+  if (shape==='decision') {
+    // Draw diamond as polygon
+    const cx=w/2, cy=h/2;
+    bodyEl = svgEl('polygon', {
+      points:`${cx},0 ${w},${cy} ${cx},${h} 0,${cy}`,
+      fill: shapeFill(shape), stroke: shapeStroke(shape), 'stroke-width':'1.5'
+    });
+  } else if (shape==='terminal') {
+    bodyEl = svgEl('rect', {
+      x:0, y:0, width:w, height:h, rx: h/2,
+      fill: shapeFill(shape), stroke: shapeStroke(shape), 'stroke-width':'1.5'
+    });
+  } else {
+    bodyEl = svgEl('rect', {
+      x:0, y:0, width:w, height:h, rx: shape==='step'?6:3,
+      fill: shapeFill(shape), stroke: shapeStroke(shape), 'stroke-width':'1.5'
+    });
+  }
+  g.appendChild(bodyEl);
 
-  const textEl = document.createElement('span');
-  textEl.className = shape === 'decision' ? 'node-text' : '';
+  // Text
+  const textEl = svgEl('text', {
+    x: w/2, y: h/2+1,
+    'text-anchor':'middle', 'dominant-baseline':'middle',
+    'font-size':'12', 'font-family':'Inter,system-ui,sans-serif', fill:'#1B2B4B',
+    'pointer-events':'none'
+  });
   textEl.textContent = label;
-  body.appendChild(textEl);
-  el.appendChild(body);
+  g.appendChild(textEl);
 
-  // Ports
+  // Port dots (visible on hover / in connect mode)
+  const portEls = {};
   ['n','s','e','w'].forEach(p => {
-    const port = document.createElement('div');
-    port.className = 'port port-' + p;
-    port.dataset.port = p;
-    port.addEventListener('mousedown', onPortMousedown);
-    el.appendChild(port);
+    const off = portOffset({w,h}, p);
+    const dot = svgEl('circle', {
+      cx: off.x, cy: off.y, r:5,
+      fill:'#fff', stroke:'#9CA3AF', 'stroke-width':'2',
+      class:'port', 'data-port':p, 'data-node':id,
+      style:'cursor:crosshair; display:none;'
+    });
+    g.appendChild(dot);
+    portEls[p] = dot;
   });
 
-  el.addEventListener('mousedown', onNodeMousedown);
-  el.addEventListener('dblclick', onNodeDblclick);
+  g.addEventListener('mousedown', onNodeMousedown);
+  g.addEventListener('dblclick',  onNodeDblclick);
+  g.addEventListener('mouseenter', () => {
+    if (mode==='connect') Object.values(portEls).forEach(d=>d.style.display='');
+  });
+  g.addEventListener('mouseleave', () => {
+    Object.values(portEls).forEach(d=>d.style.display='none');
+    clearSnapHighlight();
+  });
 
-  canvas.appendChild(el);
-  nodes[id] = { id, shape, x, y, label, el, textEl };
+  // Port mousedown handlers
+  Object.entries(portEls).forEach(([p, dot]) => {
+    dot.addEventListener('mousedown', e => {
+      if (mode!=='connect') return;
+      e.stopPropagation(); e.preventDefault();
+      const pt = portPos(id, p);
+      conn = { fromId:id, fromPort:p };
+      previewLn.style.display = '';
+      previewLn.setAttribute('d', `M${pt.x},${pt.y} L${pt.x},${pt.y}`);
+    });
+  });
+
+  // Position
+  g.setAttribute('transform', `translate(${x},${y})`);
+  nodesG.appendChild(g);
+
+  nodes[id] = { id, shape, x, y, w, h, label, g, bodyEl, textEl, portEls };
   updateStatus();
   return id;
 }
 
-function shapeDefault(shape) {
-  return { step:'Step', decision:'Decision?', terminal:'Start/End', action:'Action' }[shape] || 'Node';
-}
-
-// ─── Node mousedown ───────────────────────────────────────────────────────────
+// ─── Node interactions ────────────────────────────────────────────────────────
 function onNodeMousedown(e) {
   if (e.target.classList.contains('port')) return;
-  if (mode !== 'select') return;
+  if (mode!=='select') return;
   e.stopPropagation();
 
-  const el = e.currentTarget;
-  const id = el.dataset.id;
+  const id = e.currentTarget.dataset.id;
 
-  // Deselect all, select this
-  selectNode(id);
+  if (e.shiftKey) {
+    if (selected.has(id)) { selected.delete(id); highlightNode(id,false); }
+    else selectNode(id, true);
+    return;
+  }
+  if (!selected.has(id)) selectNode(id, false);
 
-  // Capture offset: where within the node (in wrap coords) did we click?
   const wPt = c2w(e.clientX, e.clientY);
-  const r = el.getBoundingClientRect();
-  const wr = wrap.getBoundingClientRect();
-  const nodeLeft = r.left - wr.left;
-  const nodeTop  = r.top  - wr.top;
-
-  drag = {
-    nodeId: id,
-    ox: wPt.x - nodeLeft,
-    oy: wPt.y - nodeTop,
-  };
+  const nodeStarts = {};
+  selected.forEach(sid => nodeStarts[sid] = {x:nodes[sid].x, y:nodes[sid].y});
+  if (!selected.has(id)) { selectNode(id,false); nodeStarts[id]={x:nodes[id].x,y:nodes[id].y}; }
+  drag = { startPt: wPt, nodeStarts };
 }
 
-function selectNode(id) {
-  Object.values(nodes).forEach(n => n.el.classList.remove('selected'));
-  if (id) nodes[id]?.el.classList.add('selected');
-}
-
-// ─── Port mousedown ───────────────────────────────────────────────────────────
-function onPortMousedown(e) {
-  if (mode !== 'connect') return;
+function onNodeDblclick(e) {
+  if (e.target.classList.contains('port')) return;
   e.stopPropagation();
-  e.preventDefault();
+  const id = e.currentTarget.dataset.id;
+  const n = nodes[id];
 
-  const portEl = e.currentTarget;
-  const nodeEl = portEl.closest('.node');
-  const nodeId = nodeEl.dataset.id;
-  const port = portEl.dataset.port;
-  const pt = portCenter(nodeId, port);
-
-  conn = { fromId: nodeId, fromPort: port, startX: pt.x, startY: pt.y };
-  previewLine.style.display = '';
-  updatePreview(pt.x, pt.y, pt.x, pt.y);
+  // Inline SVG text edit via foreign object temporarily, or simpler: prompt
+  const newLabel = prompt('Edit label:', n.label);
+  if (newLabel !== null && newLabel.trim()) {
+    n.label = newLabel.trim();
+    n.textEl.textContent = n.label;
+    redrawEdges();
+  }
 }
 
-// ─── Global mousemove ─────────────────────────────────────────────────────────
+// ─── Canvas events ────────────────────────────────────────────────────────────
+wrap.addEventListener('mousedown', e => {
+  const isBackground = e.target===wrap || e.target===mainSvg ||
+                       e.target===edgesG || e.target===nodesG || e.target===selBoxEl;
+  if (!isBackground) return;
+
+  const pt = c2w(e.clientX, e.clientY);
+
+  if (mode==='select') {
+    deselectAll();
+    selBox = {startX:pt.x,startY:pt.y,curX:pt.x,curY:pt.y};
+    selBoxEl.style.display='block';
+    selBoxEl.style.cssText += `;left:${pt.x}px;top:${pt.y}px;width:0;height:0;`;
+  }
+  if (mode==='connect') {
+    // Freehand: see if mouse is near a node to start
+    freehand = { pts:[pt], pathStr:`M${pt.x},${pt.y}` };
+    freehandP.style.display = '';
+    freehandP.setAttribute('d', freehand.pathStr);
+  }
+});
+
 document.addEventListener('mousemove', e => {
   const pt = c2w(e.clientX, e.clientY);
 
-  // Drag node
   if (drag) {
-    const n = nodes[drag.nodeId];
-    if (!n) { drag = null; return; }
-    const newX = pt.x - drag.ox;
-    const newY = pt.y - drag.oy;
-    n.el.style.left = newX + 'px';
-    n.el.style.top  = newY + 'px';
-    n.x = newX; n.y = newY;
+    const dx = pt.x - drag.startPt.x;
+    const dy = pt.y - drag.startPt.y;
+    Object.entries(drag.nodeStarts).forEach(([sid,start]) => {
+      const n = nodes[sid];
+      if (!n) return;
+      n.x = start.x+dx; n.y = start.y+dy;
+      n.g.setAttribute('transform', `translate(${n.x},${n.y})`);
+    });
     redrawEdges();
     return;
   }
 
-  // Connection preview
-  if (conn) {
-    // Snap check
-    snapPort = null;
-    let bestDist = 30;
+  if (selBox) {
+    selBox.curX=pt.x; selBox.curY=pt.y;
+    const rx=Math.min(selBox.startX,pt.x), ry=Math.min(selBox.startY,pt.y);
+    const rw=Math.abs(pt.x-selBox.startX), rh=Math.abs(pt.y-selBox.startY);
+    selBoxEl.style.left=rx+'px'; selBoxEl.style.top=ry+'px';
+    selBoxEl.style.width=rw+'px'; selBoxEl.style.height=rh+'px';
+    deselectAll();
     Object.values(nodes).forEach(n => {
-      if (n.id === conn.fromId) return;
+      const cx=n.x+n.w/2, cy=n.y+n.h/2;
+      if (cx>rx&&cx<rx+rw&&cy>ry&&cy<ry+rh) selectNode(n.id,true);
+    });
+    // Also select edges whose midpoint or any sampled point falls in the box
+    edges.forEach(edge => {
+      if (edgeInBox(edge, rx, ry, rw, rh)) {
+        selectedEdges.add(edge.id);
+        highlightEdge(edge.id, true);
+      }
+    });
+    return;
+  }
+
+  if (conn) {
+    // Snap to nearby port
+    snapPort = null;
+    let bestD = 28;
+    Object.values(nodes).forEach(n => {
+      if (n.id===conn.fromId) return;
       ['n','s','e','w'].forEach(p => {
-        const pc = portCenter(n.id, p);
-        const d = Math.hypot(pc.x - pt.x, pc.y - pt.y);
-        if (d < bestDist) {
-          bestDist = d;
-          snapPort = { nodeId: n.id, port: p };
-        }
+        const pp = portPos(n.id, p);
+        const d  = Math.hypot(pp.x-pt.x, pp.y-pt.y);
+        if (d<bestD) { bestD=d; snapPort={nodeId:n.id,port:p}; }
       });
     });
+    updateSnapHighlight();
+    const src = portPos(conn.fromId, conn.fromPort);
+    const tgt = snapPort ? portPos(snapPort.nodeId,snapPort.port) : pt;
+    previewLn.setAttribute('d', straightPath(src.x,src.y,tgt.x,tgt.y,conn.fromPort,snapPort?.port||'n'));
+    return;
+  }
 
-    // Highlight snap
-    document.querySelectorAll('.port.highlight').forEach(el => el.classList.remove('highlight'));
-    if (snapPort) {
-      const portEl = nodes[snapPort.nodeId].el.querySelector('.port-' + snapPort.port);
-      if (portEl) portEl.classList.add('highlight');
-    }
-
-    const target = snapPort ? portCenter(snapPort.nodeId, snapPort.port) : pt;
-    updatePreview(conn.startX, conn.startY, target.x, target.y);
+  if (freehand) {
+    freehand.pts.push(pt);
+    freehand.pathStr += ` L${pt.x.toFixed(1)},${pt.y.toFixed(1)}`;
+    freehandP.setAttribute('d', freehand.pathStr);
   }
 });
 
-// ─── Global mouseup ───────────────────────────────────────────────────────────
 document.addEventListener('mouseup', e => {
-  if (drag) { drag = null; }
+  const pt = c2w(e.clientX, e.clientY);
+
+  if (drag) { drag=null; return; }
+
+  if (selBox) {
+    selBox=null; selBoxEl.style.display='none';
+    return;
+  }
 
   if (conn) {
-    document.querySelectorAll('.port.highlight').forEach(el => el.classList.remove('highlight'));
-    previewLine.style.display = 'none';
-    previewLine.setAttribute('d', '');
+    clearSnapHighlight();
+    previewLn.style.display='none';
+    previewLn.setAttribute('d','');
+    if (snapPort) finishConn(snapPort.nodeId, snapPort.port);
+    conn=null; snapPort=null;
+    return;
+  }
 
-    if (snapPort) {
-      finishConn(snapPort.nodeId, snapPort.port);
-    }
-    conn = null;
-    snapPort = null;
+  if (freehand) {
+    freehandP.style.display='none';
+    freehandP.setAttribute('d','');
+    finishFreehand(freehand.pts, pt);
+    freehand=null;
   }
 });
 
-function updatePreview(x1, y1, x2, y2) {
-  previewLine.setAttribute('d', curvePath(x1, y1, x2, y2));
-}
-
-function cancelConn() {
-  conn = null;
-  snapPort = null;
-  previewLine.style.display = 'none';
-  previewLine.setAttribute('d', '');
-  document.querySelectorAll('.port.highlight').forEach(el => el.classList.remove('highlight'));
-}
-
-// ─── Finish connection ────────────────────────────────────────────────────────
+// ─── Connection helpers ───────────────────────────────────────────────────────
 function finishConn(toId, toPort) {
-  // Prevent duplicate
-  const dup = edges.find(e => e.from === conn.fromId && e.fromPort === conn.fromPort && e.to === toId && e.toPort === toPort);
+  if (!conn) return;
+  const dup = edges.find(e=>e.from===conn.fromId&&e.fromPort===conn.fromPort&&e.to===toId&&e.toPort===toPort);
   if (dup) return;
 
-  const id = 'e' + (++edgeCounter);
-  const pathEl = document.createElementNS('http://www.w3.org/2000/svg','path');
-  pathEl.setAttribute('stroke','#6B7280');
-  pathEl.setAttribute('stroke-width','2');
-  pathEl.setAttribute('fill','none');
-  pathEl.setAttribute('marker-end','url(#arrow)');
+  const id='e'+(++edgeCounter);
+  const pathEl = svgEl('path', {
+    stroke:'#6B7280','stroke-width':'2',fill:'none',
+    'marker-end':'url(#arrow)',
+    style:'cursor:pointer;',
+    // Wide invisible stroke for easy clicking
+    'stroke-linecap':'round'
+  });
+  // Invisible wide hit area
+  const hitEl = svgEl('path', {
+    stroke:'transparent','stroke-width':'12',fill:'none',style:'cursor:pointer;'
+  });
+  hitEl.dataset.edgeId = id;
+  hitEl.addEventListener('click', onEdgeClick);
   pathEl.dataset.edgeId = id;
-  pathEl.style.cursor = 'pointer';
   pathEl.addEventListener('click', onEdgeClick);
-  svgLayer.insertBefore(pathEl, previewLine);
+  edgesG.appendChild(pathEl);
+  edgesG.appendChild(hitEl);
 
   const labelEl = document.createElement('div');
-  labelEl.className = 'edge-label';
-  labelEl.dataset.edgeId = id;
-  labelEl.style.display = 'none';
+  labelEl.className='edge-label';
+  labelEl.dataset.edgeId=id;
+  labelEl.style.display='none';
   wrap.appendChild(labelEl);
 
-  const edge = {
-    id,
-    from: conn.fromId,
-    fromPort: conn.fromPort,
-    to: toId,
-    toPort,
-    label: '',
-    pathEl,
-    labelEl,
-  };
+  const edge = {id, from:conn.fromId, fromPort:conn.fromPort, to:toId, toPort, label:'', pathEl, hitEl, labelEl};
   edges.push(edge);
   redrawEdge(edge);
   updateStatus();
 }
 
-// ─── Edge click → label ───────────────────────────────────────────────────────
-function onEdgeClick(e) {
-  e.stopPropagation();
-  const edgeId = e.currentTarget.dataset.edgeId;
-  const edge = edges.find(ed => ed.id === edgeId);
-  if (!edge) return;
+function finishFreehand(pts, endPt) {
+  if (pts.length < 3) return;
+  const startPt = pts[0];
 
-  const inp = document.getElementById('edge-label-input');
-  inp.value = edge.label;
-  const pt = c2w(e.clientX, e.clientY);
-  const wr = wrap.getBoundingClientRect();
-  inp.style.left = (wr.left + pt.x) + 'px';
-  inp.style.top  = (wr.top  + pt.y - 16) + 'px';
-  inp.style.display = 'block';
-  inp.focus();
+  // Hit-test: find node containing start point
+  let fromNode=null, fromDist=40;
+  Object.values(nodes).forEach(n => {
+    if (startPt.x>=n.x-8 && startPt.x<=n.x+n.w+8 && startPt.y>=n.y-8 && startPt.y<=n.y+n.h+8) {
+      const d=Math.hypot(startPt.x-n.x-n.w/2, startPt.y-n.y-n.h/2);
+      if (d<fromDist) { fromDist=d; fromNode=n.id; }
+    }
+  });
 
-  inp.onkeydown = ev => {
-    if (ev.key === 'Enter') {
-      edge.label = inp.value.trim();
-      inp.style.display = 'none';
-      redrawEdge(edge);
+  let toNode=null, toDist=40;
+  Object.values(nodes).forEach(n => {
+    if (endPt.x>=n.x-8 && endPt.x<=n.x+n.w+8 && endPt.y>=n.y-8 && endPt.y<=n.y+n.h+8) {
+      const d=Math.hypot(endPt.x-n.x-n.w/2, endPt.y-n.y-n.h/2);
+      if (d<toDist) { toDist=d; toNode=n.id; }
     }
-    if (ev.key === 'Escape') {
-      inp.style.display = 'none';
-    }
-  };
-  inp.onblur = () => {
-    edge.label = inp.value.trim();
-    inp.style.display = 'none';
-    redrawEdge(edge);
-  };
+  });
+
+  if (!fromNode || !toNode || fromNode===toNode) return;
+
+  // Determine best ports from the stroke direction
+  const fromPort = bestPortForDir(fromNode, endPt.x-startPt.x, endPt.y-startPt.y, 'from');
+  const toPort   = bestPortForDir(toNode,   startPt.x-endPt.x, startPt.y-endPt.y, 'to');
+
+  const dup = edges.find(e=>e.from===fromNode&&e.to===toNode);
+  if (dup) return;
+
+  conn = {fromId:fromNode, fromPort};
+  finishConn(toNode, toPort);
+  conn = null;
 }
 
-// ─── Draw edges ───────────────────────────────────────────────────────────────
-function curvePath(x1, y1, x2, y2) {
-  const dx = Math.abs(x2 - x1);
-  const dy = Math.abs(y2 - y1);
-  const cx1 = x1 + (x2>x1 ? Math.min(dx*0.6,80) : -Math.min(dx*0.6,80));
-  const cy1 = y1 + (y2>y1 ? Math.min(dy*0.6,80) : -Math.min(dy*0.6,80));
-  // Use simpler elbows for clean routing
-  const mx = (x1 + x2) / 2;
-  const my = (y1 + y2) / 2;
-  return `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`;
+function bestPortForDir(nodeId, dx, dy, role) {
+  // Pick port based on dominant direction of the stroke
+  if (Math.abs(dx) > Math.abs(dy)) return dx>0 ? 'e' : 'w';
+  return dy>0 ? 's' : 'n';
 }
 
-function redrawEdge(edge) {
-  const p1 = portCenter(edge.from, edge.fromPort);
-  const p2 = portCenter(edge.to,   edge.toPort);
-  edge.pathEl.setAttribute('d', curvePath(p1.x, p1.y, p2.x, p2.y));
+function cancelConn() {
+  conn=null; snapPort=null;
+  previewLn.style.display='none';
+  previewLn.setAttribute('d','');
+  clearSnapHighlight();
+}
+function cancelFreehand() {
+  freehand=null;
+  freehandP.style.display='none';
+  freehandP.setAttribute('d','');
+}
 
-  // Label position = midpoint
-  const mx = (p1.x + p2.x) / 2;
-  const my = (p1.y + p2.y) / 2;
-  if (edge.label) {
-    edge.labelEl.textContent = edge.label;
-    edge.labelEl.style.display = '';
-    edge.labelEl.style.left = mx + 'px';
-    edge.labelEl.style.top  = my + 'px';
-  } else {
-    edge.labelEl.style.display = 'none';
+function updateSnapHighlight() {
+  // Show highlighted port dot on snap target
+  Object.values(nodes).forEach(n => {
+    Object.entries(n.portEls).forEach(([p,dot]) => {
+      const isSnap = snapPort && n.id===snapPort.nodeId && p===snapPort.port;
+      if (isSnap) {
+        dot.style.display='';
+        dot.setAttribute('fill','#E8503A');
+        dot.setAttribute('stroke','#E8503A');
+      } else if (n.id===conn?.fromId) {
+        // keep from-node ports visible
+      } else {
+        // show all ports on nearby nodes, hide rest
+        dot.style.display='none';
+        dot.setAttribute('fill','#fff');
+        dot.setAttribute('stroke','#9CA3AF');
+      }
+    });
+  });
+  // Show all ports on potential target nodes
+  if (snapPort) {
+    const n = nodes[snapPort.nodeId];
+    if (n) Object.values(n.portEls).forEach(d=>d.style.display='');
   }
 }
 
-function redrawEdges() {
-  edges.forEach(redrawEdge);
-}
-
-// ─── Node double-click → edit ─────────────────────────────────────────────────
-function onNodeDblclick(e) {
-  if (e.target.classList.contains('port')) return;
-  const el = e.currentTarget;
-  const id = el.dataset.id;
-  const n = nodes[id];
-  const textEl = n.textEl;
-
-  const ta = document.createElement('textarea');
-  ta.className = 'node-edit-input';
-  ta.value = n.label;
-  ta.rows = 2;
-  textEl.replaceWith(ta);
-  ta.focus();
-  ta.select();
-
-  function done() {
-    n.label = ta.value.trim() || n.label;
-    textEl.textContent = n.label;
-    ta.replaceWith(textEl);
-    n.textEl = textEl;
-    redrawEdges();
-  }
-  ta.addEventListener('blur', done);
-  ta.addEventListener('keydown', ev => {
-    if (ev.key === 'Enter' && !ev.shiftKey) { ev.preventDefault(); done(); }
-    if (ev.key === 'Escape') { ta.value = n.label; done(); }
+function clearSnapHighlight() {
+  Object.values(nodes).forEach(n => {
+    Object.values(n.portEls).forEach(dot => {
+      dot.style.display='none';
+      dot.setAttribute('fill','#fff');
+      dot.setAttribute('stroke','#9CA3AF');
+    });
   });
 }
 
-// ─── Keyboard shortcuts ───────────────────────────────────────────────────────
+// ─── Edge-in-box hit test ────────────────────────────────────────────────────
+// Sample several points along the edge path and check if any fall in the rect.
+function edgeInBox(edge, rx, ry, rw, rh) {
+  const p1 = portPos(edge.from, edge.fromPort);
+  const p2 = portPos(edge.to,   edge.toPort);
+
+  // Build the same polyline straightPath produces, sample points along it
+  const fromV = edge.fromPort==='n'||edge.fromPort==='s';
+  const toV   = edge.toPort==='n'||edge.toPort==='s';
+  let pts;
+  if (fromV && toV) {
+    const my=(p1.y+p2.y)/2;
+    pts=[[p1.x,p1.y],[p1.x,my],[p2.x,my],[p2.x,p2.y]];
+  } else if (!fromV && !toV) {
+    const mx=(p1.x+p2.x)/2;
+    pts=[[p1.x,p1.y],[mx,p1.y],[mx,p2.y],[p2.x,p2.y]];
+  } else if (fromV) {
+    pts=[[p1.x,p1.y],[p1.x,p2.y],[p2.x,p2.y]];
+  } else {
+    pts=[[p1.x,p1.y],[p2.x,p1.y],[p2.x,p2.y]];
+  }
+
+  // Check each segment: sample 8 points per segment
+  for (let i=0;i<pts.length-1;i++) {
+    const ax=pts[i][0],ay=pts[i][1],bx=pts[i+1][0],by=pts[i+1][1];
+    for (let t=0;t<=1;t+=0.125) {
+      const sx=ax+(bx-ax)*t, sy=ay+(by-ay)*t;
+      if (sx>=rx&&sx<=rx+rw&&sy>=ry&&sy<=ry+rh) return true;
+    }
+  }
+  return false;
+}
+
+// ─── Edge drawing ─────────────────────────────────────────────────────────────
+function redrawEdge(edge) {
+  const p1 = portPos(edge.from, edge.fromPort);
+  const p2 = portPos(edge.to,   edge.toPort);
+  const d = straightPath(p1.x,p1.y,p2.x,p2.y,edge.fromPort,edge.toPort);
+  edge.pathEl.setAttribute('d', d);
+  if (edge.hitEl) edge.hitEl.setAttribute('d', d);
+
+  if (edge.label) {
+    const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
+    edge.labelEl.textContent=edge.label;
+    edge.labelEl.style.display='';
+    edge.labelEl.style.left=mx+'px';
+    edge.labelEl.style.top=my+'px';
+  } else {
+    edge.labelEl.style.display='none';
+  }
+}
+function redrawEdges() { edges.forEach(redrawEdge); }
+
+// ─── Edge click → select + label ─────────────────────────────────────────────
+function onEdgeClick(e) {
+  e.stopPropagation();
+  const edge = edges.find(ed=>ed.id===e.currentTarget.dataset.edgeId);
+  if (!edge) return;
+
+  // Toggle selection on this edge
+  deselectAll();
+  selectedEdges.add(edge.id);
+  highlightEdge(edge.id, true);
+
+  // Double-click to label (single click just selects)
+  if (e.detail === 2) {
+    const inp = document.getElementById('edge-label-input');
+    inp.value = edge.label;
+    inp.style.display='block';
+    inp.style.left=(e.clientX-40)+'px';
+    inp.style.top=(e.clientY-20)+'px';
+    inp.focus(); inp.select();
+    inp.onkeydown = ev => {
+      if (ev.key==='Enter') { edge.label=inp.value.trim(); inp.style.display='none'; redrawEdge(edge); }
+      if (ev.key==='Escape') inp.style.display='none';
+    };
+    inp.onblur = () => { edge.label=inp.value.trim(); inp.style.display='none'; redrawEdge(edge); };
+  }
+}
+
+// ─── Keyboard ─────────────────────────────────────────────────────────────────
 document.addEventListener('keydown', e => {
-  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
-  if (e.key === 'v' || e.key === 'V') setMode('select');
-  if (e.key === 'c' || e.key === 'C') setMode('connect');
-  if ((e.key === 'Delete' || e.key === 'Backspace') && mode === 'select') deleteSelected();
-  if (e.key === 'Escape') cancelConn();
+  if (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
+  if (e.key==='v'||e.key==='V') setMode('select');
+  if (e.key==='c'||e.key==='C') setMode('connect');
+  if (e.key==='s'||e.key==='S') addNode('step');
+  if (e.key==='d'||e.key==='D') addNode('decision');
+  if (e.key==='t'||e.key==='T') addNode('terminal');
+  if (e.key==='a'||e.key==='A') addNode('action');
+  if (e.key==='Delete'||e.key==='Backspace') deleteSelected();
+  if (e.key==='Escape') { cancelConn(); cancelFreehand(); deselectAll(); }
 });
 
 function deleteSelected() {
-  const sel = canvas.querySelector('.node.selected');
-  if (!sel) return;
-  const id = sel.dataset.id;
-  // Remove edges connected to this node
-  edges = edges.filter(edge => {
-    if (edge.from === id || edge.to === id) {
-      edge.pathEl.remove();
-      edge.labelEl.remove();
-      return false;
+  if (!selected.size && !selectedEdges.size) return;
+
+  // Delete selected edges first
+  selectedEdges.forEach(eid => {
+    const idx = edges.findIndex(e => e.id === eid);
+    if (idx !== -1) {
+      edges[idx].pathEl.remove();
+      edges[idx].hitEl?.remove();
+      edges[idx].labelEl.remove();
+      edges.splice(idx, 1);
     }
-    return true;
   });
-  sel.remove();
-  delete nodes[id];
+  selectedEdges.clear();
+
+  // Delete selected nodes (and their connected edges)
+  selected.forEach(id => {
+    edges = edges.filter(edge => {
+      if (edge.from===id||edge.to===id) { edge.pathEl.remove(); edge.hitEl?.remove(); edge.labelEl.remove(); return false; }
+      return true;
+    });
+    nodes[id]?.g.remove();
+    delete nodes[id];
+  });
+  selected.clear();
   updateStatus();
 }
 
-// Canvas click = deselect
-canvas.addEventListener('click', e => {
-  if (!e.target.closest('.node')) selectNode(null);
-});
-
-// ─── Status ───────────────────────────────────────────────────────────────────
 function updateStatus() {
-  document.getElementById('st-nodes').textContent = Object.keys(nodes).length;
-  document.getElementById('st-edges').textContent = edges.length;
+  document.getElementById('st-nodes').textContent=Object.keys(nodes).length;
+  document.getElementById('st-edges').textContent=edges.length;
 }
 
 // ─── Clear ────────────────────────────────────────────────────────────────────
 function clearCanvas() {
-  if (!confirm('Clear all nodes and connections?')) return;
-  Object.values(nodes).forEach(n => n.el.remove());
-  nodes = {};
-  edges.forEach(e => { e.pathEl.remove(); e.labelEl.remove(); });
-  edges = [];
-  nodeCounter = 0;
-  edgeCounter = 0;
+  if (Object.keys(nodes).length>0&&!confirm('Clear canvas?')) return;
+  Object.values(nodes).forEach(n=>n.g.remove());
+  nodes={}; selected.clear();
+  edges.forEach(e=>{e.pathEl.remove();e.hitEl?.remove();e.labelEl.remove();});
+  edges=[]; nodeCounter=0; edgeCounter=0;
   updateStatus();
+}
+
+// ─── Mermaid ──────────────────────────────────────────────────────────────────
+function mermaidCode() {
+  const lines=['flowchart TD'];
+  Object.values(nodes).forEach(n=>{
+    const lbl=n.label.replace(/"/g,"'");
+    const s={step:`["${lbl}"]`,decision:`{"${lbl}"}`,terminal:`(["${lbl}"])`,action:`["${lbl}"]`};
+    lines.push(`  ${n.id}${s[n.shape]||`["${lbl}"]`}`);
+  });
+  edges.forEach(e=>lines.push(`  ${e.from} ${e.label?`-- ${e.label} -->`:'-->'} ${e.to}`));
+  return lines.join('\n');
+}
+function copyMermaidDirect() {
+  if (!Object.keys(nodes).length) { showToast('Add some nodes first.','warn'); return; }
+  const code=mermaidCode();
+  navigator.clipboard.writeText(code).then(()=>showToast('Mermaid copied!','ok')).catch(()=>{
+    const ta=document.createElement('textarea');
+    ta.value=code; ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta);
+    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
+    showToast('Mermaid copied!','ok');
+  });
 }
 
 // ─── Export SVG ───────────────────────────────────────────────────────────────
 function exportSVG() {
-  if (Object.keys(nodes).length === 0) { alert('Add some nodes first.'); return; }
-
-  // Compute bounding box
-  const wr = wrap.getBoundingClientRect();
-  let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
-  Object.values(nodes).forEach(n => {
-    const r = n.el.getBoundingClientRect();
-    const nx = r.left - wr.left, ny = r.top - wr.top;
-    minX = Math.min(minX, nx); minY = Math.min(minY, ny);
-    maxX = Math.max(maxX, nx + r.width); maxY = Math.max(maxY, ny + r.height);
+  if (!Object.keys(nodes).length) { showToast('Add nodes first.','warn'); return; }
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  Object.values(nodes).forEach(n=>{
+    minX=Math.min(minX,n.x); minY=Math.min(minY,n.y);
+    maxX=Math.max(maxX,n.x+n.w); maxY=Math.max(maxY,n.y+n.h);
   });
-  const pad = 40;
-  minX -= pad; minY -= pad; maxX += pad; maxY += pad;
-  const W = maxX - minX, H = maxY - minY;
-
-  const svgParts = [
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${W}" height="${H}" viewBox="0 0 ${W} ${H}">`,
-    `<defs>`,
-    `<marker id="arr" markerWidth="10" markerHeight="7" refX="10" refY="3.5" orient="auto">`,
-    `<polygon points="0 0, 10 3.5, 0 7" fill="#6B7280"/>`,
-    `</marker>`,
-    `</defs>`,
-    `<rect x="0" y="0" width="${W}" height="${H}" fill="#f5f4f0"/>`,
-  ];
-
-  // Edges
-  edges.forEach(edge => {
-    const p1 = portCenter(edge.from, edge.fromPort);
-    const p2 = portCenter(edge.to,   edge.toPort);
-    const x1 = p1.x - minX, y1 = p1.y - minY;
-    const x2 = p2.x - minX, y2 = p2.y - minY;
-    const my = (y1+y2)/2;
-    svgParts.push(`<path d="M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}" stroke="#6B7280" stroke-width="2" fill="none" marker-end="url(#arr)"/>`);
-    if (edge.label) {
-      const mx = (x1+x2)/2;
-      svgParts.push(`<rect x="${mx-edge.label.length*3.5-4}" y="${my-9}" width="${edge.label.length*7+8}" height="16" rx="3" fill="white" stroke="#e0e0e0"/>`);
-      svgParts.push(`<text x="${mx}" y="${my+3}" text-anchor="middle" font-size="11" font-family="Inter,system-ui,sans-serif" fill="#555">${esc(edge.label)}</text>`);
-    }
-  });
-
-  // Nodes
-  Object.values(nodes).forEach(n => {
-    const r = n.el.getBoundingClientRect();
-    const nx = r.left - wr.left - minX;
-    const ny = r.top - wr.top - minY;
-    const nw = r.width, nh = r.height;
-    const styles = {
-      step:     { fill:'#ffffff', stroke:'#D1D5DB', rx:6 },
-      decision: { fill:'#FFFBEB', stroke:'#FCD34D', rx:4 },
-      terminal: { fill:'#F0FDF4', stroke:'#86EFAC', rx:nh/2 },
-      action:   { fill:'#EFF6FF', stroke:'#93C5FD', rx:3 },
-    };
-    const s = styles[n.shape] || styles.step;
-
-    if (n.shape === 'decision') {
-      // Draw as diamond
-      const cx = nx + nw/2, cy = ny + nh/2;
-      const hw = nw/2, hh = nh/2;
-      svgParts.push(`<polygon points="${cx},${ny} ${nx+nw},${cy} ${cx},${ny+nh} ${nx},${cy}" fill="${s.fill}" stroke="${s.stroke}" stroke-width="1.5"/>`);
-      svgParts.push(`<foreignObject x="${nx+8}" y="${ny+8}" width="${nw-16}" height="${nh-16}"><div xmlns="http://www.w3.org/1999/xhtml" style="display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;font-family:Inter,system-ui,sans-serif;text-align:center;word-wrap:break-word;">${esc(n.label)}</div></foreignObject>`);
-    } else {
-      svgParts.push(`<rect x="${nx}" y="${ny}" width="${nw}" height="${nh}" rx="${s.rx}" fill="${s.fill}" stroke="${s.stroke}" stroke-width="1.5"/>`);
-      // Text (wrapped)
-      const words = n.label.split(' ');
-      const lineH = 16, maxW = nw - 16;
-      let lines = [], cur = '';
-      words.forEach(w => {
-        const test = cur ? cur + ' ' + w : w;
-        if (test.length * 7 > maxW && cur) { lines.push(cur); cur = w; }
-        else cur = test;
-      });
-      if (cur) lines.push(cur);
-      const totalH = lines.length * lineH;
-      const startY = ny + nh/2 - totalH/2 + lineH/2 + 4;
-      lines.forEach((line, i) => {
-        svgParts.push(`<text x="${nx + nw/2}" y="${startY + i*lineH}" text-anchor="middle" font-size="13" font-family="Inter,system-ui,sans-serif" fill="#1B2B4B">${esc(line)}</text>`);
-      });
-    }
-  });
-
-  svgParts.push('</svg>');
-  const svgStr = svgParts.join('\n');
-  const blob = new Blob([svgStr], {type:'image/svg+xml'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url; a.download = 'flowchart.svg'; a.click();
+  const pad=40; minX-=pad;minY-=pad;maxX+=pad;maxY+=pad;
+  const W=maxX-minX,H=maxY-minY;
+  const clone = mainSvg.cloneNode(true);
+  clone.setAttribute('width',W); clone.setAttribute('height',H);
+  clone.setAttribute('viewBox',`${minX} ${minY} ${W} ${H}`);
+  // Remove preview/freehand/port dots
+  clone.querySelectorAll('#preview-line,#freehand-path,.port').forEach(el=>el.remove());
+  // Remove inline styles that hide things
+  clone.querySelectorAll('[style]').forEach(el=>el.removeAttribute('style'));
+  const blob=new Blob(['<?xml version="1.0"?>',clone.outerHTML],{type:'image/svg+xml'});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a'); a.href=url; a.download='flowchart.svg'; a.click();
   URL.revokeObjectURL(url);
 }
 
-function esc(s) {
-  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-}
-
-// ─── Mermaid export ───────────────────────────────────────────────────────────
-function showMermaid() {
-  let lines = ['flowchart TD'];
-  Object.values(nodes).forEach(n => {
-    const lbl = n.label.replace(/"/g,"'");
-    const shapes = {
-      step:     `["${lbl}"]`,
-      decision: `{"${lbl}"}`,
-      terminal: `(["${lbl}"])`,
-      action:   `["${lbl}"]`,
-    };
-    lines.push(`  ${n.id}${shapes[n.shape] || `["${lbl}"]`}`);
-  });
-  edges.forEach(e => {
-    const arrow = e.label ? `-- ${e.label} -->` : '-->';
-    lines.push(`  ${e.from} ${arrow} ${e.to}`);
-  });
-  document.getElementById('mermaid-out').value = lines.join('\n');
-  document.getElementById('mermaid-modal').classList.add('open');
-}
-function closeMermaid() { document.getElementById('mermaid-modal').classList.remove('open'); }
-function copyMermaid() {
-  const ta = document.getElementById('mermaid-out');
-  ta.select();
-  document.execCommand('copy');
-  alert('Copied!');
-}
-
-// ─── Sample flowchart ─────────────────────────────────────────────────────────
-function loadSample() {
-  clearCanvas();
-
-  const cx = wrap.offsetWidth / 2;
-  const cy = 60;
-  const g = 130;
-
-  const s = addNode('terminal', cx-70, cy, 'Invoice Received');
-  const q1 = addNode('decision', cx-55, cy+g, 'Is it imported?');
-  const imp = addNode('step', cx-160, cy+g*2, 'Check import log');
-  const man = addNode('step', cx+30, cy+g*2, 'Tag & notify vendor');
-  const q2 = addNode('decision', cx-55, cy+g*3, 'Amount > $500?');
-  const rev = addNode('step', cx-160, cy+g*4, 'Flag for review');
-  const ok  = addNode('terminal', cx+30, cy+g*4, 'Approve Invoice');
-
-  // Edges
-  setTimeout(() => {
-    conn = {fromId:s, fromPort:'s', startX:0, startY:0};
-    finishConn(q1, 'n'); conn=null;
-
-    conn = {fromId:q1, fromPort:'w', startX:0, startY:0};
-    finishConn(imp, 'n'); conn=null;
-    edges[edges.length-1].label='Yes';
-    redrawEdge(edges[edges.length-1]);
-
-    conn = {fromId:q1, fromPort:'e', startX:0, startY:0};
-    finishConn(man, 'n'); conn=null;
-    edges[edges.length-1].label='No';
-    redrawEdge(edges[edges.length-1]);
-
-    conn = {fromId:imp, fromPort:'s', startX:0, startY:0};
-    finishConn(q2, 'n'); conn=null;
-
-    conn = {fromId:man, fromPort:'s', startX:0, startY:0};
-    finishConn(q2, 'e'); conn=null;
-
-    conn = {fromId:q2, fromPort:'w', startX:0, startY:0};
-    finishConn(rev, 'n'); conn=null;
-    edges[edges.length-1].label='>$500';
-    redrawEdge(edges[edges.length-1]);
-
-    conn = {fromId:q2, fromPort:'e', startX:0, startY:0};
-    finishConn(ok, 'n'); conn=null;
-    edges[edges.length-1].label='≤$500';
-    redrawEdge(edges[edges.length-1]);
-
-    updateStatus();
-  }, 50);
-}
-
-// ─── Canvas background click ──────────────────────────────────────────────────
-wrap.addEventListener('click', e => {
-  if (e.target === wrap || e.target === canvas) selectNode(null);
-});
-
-// ─── Copy Mermaid directly (no modal) ────────────────────────────────────────
-function copyMermaidDirect() {
-  if (Object.keys(nodes).length === 0) { showToast('Add some nodes first.', 'warn'); return; }
-  let lines = ['flowchart TD'];
-  Object.values(nodes).forEach(n => {
-    const lbl = n.label.replace(/"/g,"'");
-    const shapes = {
-      step:     `["${lbl}"]`,
-      decision: `{"${lbl}"}`,
-      terminal: `(["${lbl}"])`,
-      action:   `["${lbl}"]`,
-    };
-    lines.push(`  ${n.id}${shapes[n.shape] || `["${lbl}"]`}`);
-  });
-  edges.forEach(e => {
-    const arrow = e.label ? `-- ${e.label} -->` : '-->';
-    lines.push(`  ${e.from} ${arrow} ${e.to}`);
-  });
-  const code = lines.join('\n');
-  navigator.clipboard.writeText(code).then(() => {
-    showToast('Mermaid code copied!', 'ok');
-  }).catch(() => {
-    // fallback
-    const ta = document.createElement('textarea');
-    ta.value = code; ta.style.position='fixed'; ta.style.opacity='0';
-    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
-    document.body.removeChild(ta);
-    showToast('Mermaid code copied!', 'ok');
-  });
-}
-
-// ─── Save to Notion ───────────────────────────────────────────────────────────
-const NOTION_DB_URL = 'https://app.notion.com/p/73b895456021436981e354dfa3916bef';
+// ─── Save to Notion (downloads SVG + opens Notion) ───────────────────────────
+const NOTION_DB_URL='https://app.notion.com/p/73b895456021436981e354dfa3916bef';
 function saveToNotion() {
-  // Copy mermaid first so it's ready to paste
-  copyMermaidDirect();
-  setTimeout(() => {
-    window.open(NOTION_DB_URL, '_blank');
-  }, 400);
+  if (!Object.keys(nodes).length) { showToast('Add nodes first.','warn'); return; }
+  exportSVG();
+  setTimeout(()=>window.open(NOTION_DB_URL,'_blank'), 400);
 }
 
 // ─── Toast ────────────────────────────────────────────────────────────────────
-function showToast(msg, type) {
-  let t = document.getElementById('toast');
-  if (!t) {
-    t = document.createElement('div');
-    t.id = 'toast';
-    t.style.cssText = 'position:fixed;bottom:48px;left:50%;transform:translateX(-50%);padding:8px 18px;border-radius:8px;font-size:13px;font-family:inherit;z-index:9999;transition:opacity 0.3s;pointer-events:none;';
-    document.body.appendChild(t);
-  }
-  t.textContent = msg;
-  t.style.background = type === 'ok' ? '#1B2B4B' : '#E8503A';
-  t.style.color = '#fff';
-  t.style.opacity = '1';
-  clearTimeout(t._hide);
-  t._hide = setTimeout(() => { t.style.opacity = '0'; }, 2200);
+function showToast(msg,type) {
+  let t=document.getElementById('toast');
+  if (!t) { t=document.createElement('div'); t.id='toast'; t.style.cssText='position:fixed;bottom:48px;left:50%;transform:translateX(-50%);padding:8px 18px;border-radius:8px;font-size:13px;font-family:inherit;z-index:9999;transition:opacity 0.3s;pointer-events:none;'; document.body.appendChild(t); }
+  t.textContent=msg; t.style.background=type==='ok'?'#1B2B4B':'#E8503A'; t.style.color='#fff'; t.style.opacity='1';
+  clearTimeout(t._h); t._h=setTimeout(()=>t.style.opacity='0',2200);
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
+// ─── Sample ───────────────────────────────────────────────────────────────────
+function loadSample() {
+  clearCanvas();
+  const cx = wrap.offsetWidth/2;
+  const g  = 120;
+
+  const s  = addNode('terminal', cx-70,  60,       'Invoice Received');
+  const q1 = addNode('decision', cx-60,  60+g,     'Is it imported?');
+  const im = addNode('step',    cx-230,  60+g*2,   'Check import log');
+  const ma = addNode('step',    cx+60,   60+g*2,   'Tag & notify vendor');
+  const q2 = addNode('decision', cx-60,  60+g*3,   'Amount > $500?');
+  const rv = addNode('step',    cx-230,  60+g*4,   'Flag for review');
+  const ok = addNode('terminal', cx+60,  60+g*4,   'Approve Invoice');
+
+  setTimeout(()=>{
+    function link(a,ap,b,bp,lbl) {
+      conn={fromId:a,fromPort:ap}; finishConn(b,bp); conn=null;
+      if (lbl) { edges[edges.length-1].label=lbl; redrawEdge(edges[edges.length-1]); }
+    }
+    link(s,'s', q1,'n');
+    link(q1,'w', im,'n','Yes');
+    link(q1,'e', ma,'n','No');
+    link(im,'s', q2,'n');
+    link(ma,'s', q2,'e');
+    link(q2,'w', rv,'n','>$500');
+    link(q2,'e', ok,'n','≤$500');
+    updateStatus();
+  },50);
+}
+
 loadSample();
 </script>
 </body>
