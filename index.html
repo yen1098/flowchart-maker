@@ -8,7 +8,6 @@
   * { box-sizing: border-box; margin: 0; padding: 0; }
   body { font-family: 'Inter', system-ui, sans-serif; background: #f5f4f0; color: #1B2B4B; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
 
-  /* Top bar */
   #topbar {
     background: #1B2B4B; color: #fff;
     display: flex; align-items: center; gap: 12px;
@@ -27,7 +26,6 @@
   .tb-btn.notion-btn:hover { background: rgba(255,255,255,0.25); }
   #topbar .spacer { flex: 1; }
 
-  /* Palette */
   #palette {
     background: #fff; border-bottom: 1px solid #e5e5e5;
     display: flex; align-items: center; gap: 8px;
@@ -57,7 +55,6 @@
   .mode-btn.active { background: #1B2B4B; color: #fff; border-color: #1B2B4B; }
   .mode-btn.active .kbd { background: rgba(255,255,255,0.25); color: #fff; }
 
-  /* Canvas */
   #canvas-wrap {
     flex: 1; position: relative; overflow: hidden;
     background: #f5f4f0;
@@ -67,14 +64,28 @@
   }
   #canvas-wrap.connect-mode { cursor: crosshair; }
 
-  /* SVG fills the wrap — nodes AND edges live here */
   #main-svg {
     position: absolute; top: 0; left: 0;
     width: 100%; height: 100%;
     overflow: visible;
   }
 
-  /* Rubber-band selection box */
+  /* Node label rendered via foreignObject */
+  .node-label {
+    width: 100%; height: 100%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-family: 'Inter', system-ui, sans-serif;
+    color: #1B2B4B; line-height: 1.35;
+    word-break: break-word; overflow-wrap: break-word;
+    text-align: center; padding: 6px 8px;
+    user-select: none; pointer-events: none;
+    white-space: pre-wrap;
+  }
+  .node-label.editing {
+    outline: none; pointer-events: auto;
+    cursor: text; user-select: text;
+  }
+
   #selbox {
     display: none; position: absolute;
     border: 1.5px dashed #E8503A;
@@ -82,7 +93,6 @@
     pointer-events: none; z-index: 50;
   }
 
-  /* Edge labels (HTML overlay) */
   .edge-label {
     position: absolute; font-size: 11px;
     background: #fff; border: 1px solid #e0e0e0;
@@ -91,7 +101,6 @@
     white-space: nowrap;
   }
 
-  /* Edge label input */
   #edge-label-input {
     display: none; position: fixed; z-index: 500;
     background: #fff; border: 1.5px solid #E8503A;
@@ -99,13 +108,21 @@
     font-family: inherit; outline: none; min-width: 80px;
   }
 
-  /* Status bar */
   #statusbar {
     background: #1B2B4B; color: rgba(255,255,255,0.6);
     font-size: 11px; padding: 4px 16px;
     display: flex; gap: 16px; flex-shrink: 0;
   }
   #statusbar span b { color: #fff; }
+
+  /* Resize handle shown on hover/selection */
+  .resize-handle {
+    cursor: se-resize;
+    fill: #9CA3AF; opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .node-g:hover .resize-handle,
+  .node-g.selected .resize-handle { opacity: 1; }
 </style>
 </head>
 <body>
@@ -114,10 +131,10 @@
   <div class="logo"><span>B</span>anner</div>
   <div class="logo" style="font-weight:400;font-size:13px;opacity:0.7">Flowchart Builder</div>
   <div class="sep"></div>
-  <button class="tb-btn" onclick="clearCanvas()">🗑 Clear</button>
-  <button class="tb-btn" onclick="loadSample()">📋 Sample</button>
+  <button class="tb-btn" onclick="clearCanvas()">&#128465; Clear</button>
+  <button class="tb-btn" onclick="loadSample()">&#128203; Sample</button>
   <div class="spacer"></div>
-  <span style="font-size:12px;opacity:0.5">Del = delete · Esc = cancel</span>
+  <span style="font-size:12px;opacity:0.5">Del = delete &middot; Esc = cancel</span>
   <div class="sep"></div>
   <button class="tb-btn notion-btn" onclick="saveToNotion()">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="display:inline;vertical-align:-2px;margin-right:5px"><rect x="1" y="1" width="12" height="12" rx="2" fill="white" opacity="0.9"/><path d="M3.5 3.5h4l3 3.5-3 3.5h-4v-7z" fill="#1B2B4B" opacity="0.7"/></svg>
@@ -144,8 +161,8 @@
     Action <span class="kbd">A</span>
   </button>
   <div class="sep"></div>
-  <button class="mode-btn active" id="btn-select" onclick="setMode('select')">✦ Select <span class="kbd">V</span></button>
-  <button class="mode-btn" id="btn-connect" onclick="setMode('connect')">⤳ Connect <span class="kbd">C</span></button>
+  <button class="mode-btn active" id="btn-select" onclick="setMode('select')">&#10022; Select <span class="kbd">V</span></button>
+  <button class="mode-btn" id="btn-connect" onclick="setMode('connect')">&#10551; Connect <span class="kbd">C</span></button>
 </div>
 
 <div id="canvas-wrap">
@@ -162,15 +179,11 @@
         <polygon points="0 0, 8 3, 0 6" fill="#E8503A"/>
       </marker>
     </defs>
-    <!-- edges group (behind nodes) -->
     <g id="edges-g"></g>
-    <!-- nodes group -->
     <g id="nodes-g"></g>
-    <!-- preview line (always on top) -->
     <path id="preview-line" d="" stroke="#E8503A" stroke-width="1.5"
           stroke-dasharray="6,4" fill="none" marker-end="url(#arrow-pre)"
           style="display:none; pointer-events:none"/>
-    <!-- freehand draw path -->
     <path id="freehand-path" d="" stroke="#E8503A" stroke-width="2"
           stroke-dasharray="5,4" fill="none" stroke-linecap="round"
           style="display:none; pointer-events:none"/>
@@ -181,34 +194,31 @@
   <span>Nodes: <b id="st-nodes">0</b></span>
   <span>Connections: <b id="st-edges">0</b></span>
   <span>Mode: <b id="st-mode">Select</b></span>
-  <span style="margin-left:auto;opacity:0.5">Double-click node to edit · Click edge to select · Double-click edge to label · Drag-select or click to select, then Del to delete</span>
+  <span style="margin-left:auto;opacity:0.5">Double-click to edit label &middot; Drag corner to resize &middot; Click edge to select &middot; Del to delete</span>
 </div>
 
 <input id="edge-label-input" type="text" placeholder="Label (Enter to save, Esc to cancel)">
 
 <script>
-// ─── Constants ────────────────────────────────────────────────────────────────
-// Node default dimensions (used for port math without DOM queries on rotated els)
-const NODE_W  = 140;  // step / action / terminal width
-const NODE_H  = 40;   // step / action height
-const TERM_H  = 36;   // terminal height
-const DIAM_W  = 120;  // decision bounding box width
-const DIAM_H  = 70;   // decision bounding box height
-// Arrow setback: shorten path end so arrowhead doesn't overlap node border
+// ── Constants ──────────────────────────────────────────────────────────────────
+const NODE_W  = 140;
+const NODE_H  = 48;
+const TERM_H  = 40;
+const DIAM_W  = 140;
+const DIAM_H  = 80;
 const SETBACK = 9;
+const CORNER_R = 16;
 
-// ─── State ────────────────────────────────────────────────────────────────────
-let nodes         = {};   // id → {id, shape, x, y, w, h, label, g, bodyEl, textEl}
-let edges         = [];   // {id, from, fromPort, to, toPort, label, pathEl, labelEl}
-let selected      = new Set(); // selected node ids
-let selectedEdges = new Set(); // selected edge ids
-let nodeCounter = 0, edgeCounter = 0;
-let mode = 'select';
-let drag = null;     // {startPt, nodeStarts:{id:{x,y}}}
-let conn = null;     // {fromId, fromPort}
-let snapPort = null; // {nodeId, port}
-let selBox   = null; // {startX,startY,curX,curY}
-let freehand = null; // {pts:[{x,y}]}
+const MIN_W = { step:80, action:80, terminal:80, decision:100 };
+const MIN_H = { step:36, action:36, terminal:32, decision:60  };
+
+// ── State ──────────────────────────────────────────────────────────────────────
+let nodes={}, edges=[];
+let selected=new Set(), selectedEdges=new Set();
+let nodeCounter=0, edgeCounter=0;
+let mode='select';
+let drag=null, resize=null, conn=null, snapPort=null, selBox=null, freehand=null;
+let editingNodeId=null;
 
 const wrap      = document.getElementById('canvas-wrap');
 const mainSvg   = document.getElementById('main-svg');
@@ -218,742 +228,580 @@ const previewLn = document.getElementById('preview-line');
 const freehandP = document.getElementById('freehand-path');
 const selBoxEl  = document.getElementById('selbox');
 
-// ─── SVG helpers ──────────────────────────────────────────────────────────────
-const SVG_NS = 'http://www.w3.org/2000/svg';
-function svgEl(tag, attrs={}) {
-  const el = document.createElementNS(SVG_NS, tag);
-  for (const [k,v] of Object.entries(attrs)) el.setAttribute(k, v);
+// ── SVG helpers ────────────────────────────────────────────────────────────────
+const SVG_NS='http://www.w3.org/2000/svg';
+function svgEl(tag,attrs={}){
+  const el=document.createElementNS(SVG_NS,tag);
+  for(const[k,v]of Object.entries(attrs))el.setAttribute(k,v);
   return el;
 }
 
-// ─── Coordinate helpers ───────────────────────────────────────────────────────
-function c2w(clientX, clientY) {
-  const r = wrap.getBoundingClientRect();
-  return { x: clientX - r.left, y: clientY - r.top };
+function c2w(cx,cy){const r=wrap.getBoundingClientRect();return{x:cx-r.left,y:cy-r.top};}
+
+function portOffset(node,port){
+  const{w,h}=node;
+  return{n:{x:w/2,y:0},s:{x:w/2,y:h},e:{x:w,y:h/2},w:{x:0,y:h/2}}[port];
+}
+function portPos(nid,port){
+  const n=nodes[nid];if(!n)return{x:0,y:0};
+  const o=portOffset(n,port);return{x:n.x+o.x,y:n.y+o.y};
+}
+function setback(x1,y1,x2,y2,amt){
+  const dx=x2-x1,dy=y2-y1,len=Math.hypot(dx,dy);
+  if(len<amt+1)return{x:x2,y:y2};
+  return{x:x2-dx/len*amt,y:y2-dy/len*amt};
 }
 
-// Port positions relative to node top-left (x,y)
-// All math uses stored node.x/y + node.w/node.h — no DOM getBoundingClientRect needed.
-function portOffset(node, port) {
-  const { w, h } = node;
-  return {
-    n: { x: w/2,   y: 0   },
-    s: { x: w/2,   y: h   },
-    e: { x: w,     y: h/2 },
-    w: { x: 0,     y: h/2 },
-  }[port];
-}
-
-function portPos(nodeId, port) {
-  const n = nodes[nodeId];
-  if (!n) return {x:0,y:0};
-  const off = portOffset(n, port);
-  return { x: n.x + off.x, y: n.y + off.y };
-}
-
-// Shorten a segment end by SETBACK px (so arrow tip sits on node border, not inside)
-function setback(x1, y1, x2, y2, amount) {
-  const dx = x2 - x1, dy = y2 - y1;
-  const len = Math.hypot(dx, dy);
-  if (len < amount + 1) return {x: x2, y: y2};
-  return { x: x2 - dx/len*amount, y: y2 - dy/len*amount };
-}
-
-// Rounded orthogonal path: elbow corners replaced with quadratic bezier arcs
-const CORNER_R = 16; // corner rounding radius
-
-function straightPath(x1, y1, x2, y2, fromPort, toPort) {
-  const fromV = fromPort === 'n' || fromPort === 's';
-  const toV   = toPort   === 'n' || toPort   === 's';
+// Rounded orthogonal path
+function straightPath(x1,y1,x2,y2,fp,tp){
+  const fv=fp==='n'||fp==='s', tv=tp==='n'||tp==='s';
   let pts;
+  if(Math.abs(y1-y2)<2&&!fv&&!tv) pts=[[x1,y1],[x2,y2]];
+  else if(Math.abs(x1-x2)<2&&fv&&tv) pts=[[x1,y1],[x2,y2]];
+  else if(fv&&tv){const my=(y1+y2)/2;pts=[[x1,y1],[x1,my],[x2,my],[x2,y2]];}
+  else if(!fv&&!tv){const mx=(x1+x2)/2;pts=[[x1,y1],[mx,y1],[mx,y2],[x2,y2]];}
+  else if(fv) pts=[[x1,y1],[x1,y2],[x2,y2]];
+  else        pts=[[x1,y1],[x2,y1],[x2,y2]];
 
-  if (Math.abs(y1-y2) < 2 && !fromV && !toV) {
-    pts = [[x1,y1],[x2,y2]];
-  } else if (Math.abs(x1-x2) < 2 && fromV && toV) {
-    pts = [[x1,y1],[x2,y2]];
-  } else if (fromV && toV) {
-    const my = (y1+y2)/2;
-    pts = [[x1,y1],[x1,my],[x2,my],[x2,y2]];
-  } else if (!fromV && !toV) {
-    const mx = (x1+x2)/2;
-    pts = [[x1,y1],[mx,y1],[mx,y2],[x2,y2]];
-  } else if (fromV) {
-    pts = [[x1,y1],[x1,y2],[x2,y2]];
-  } else {
-    pts = [[x1,y1],[x2,y1],[x2,y2]];
+  const last=pts.length-1,prev=pts[last-1],end=pts[last];
+  const sb=setback(prev[0],prev[1],end[0],end[1],SETBACK);
+  pts[last]=[sb.x,sb.y];
+
+  if(pts.length===2)
+    return`M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} L${pts[1][0].toFixed(1)},${pts[1][1].toFixed(1)}`;
+
+  let d=`M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
+  for(let i=1;i<pts.length-1;i++){
+    const p=pts[i-1],c=pts[i],n=pts[i+1];
+    const d1x=c[0]-p[0],d1y=c[1]-p[1],d2x=n[0]-c[0],d2y=n[1]-c[1];
+    const l1=Math.hypot(d1x,d1y),l2=Math.hypot(d2x,d2y);
+    const r=Math.min(CORNER_R,l1/2,l2/2);
+    const bx=c[0]-d1x/l1*r,by=c[1]-d1y/l1*r;
+    const ax=c[0]+d2x/l2*r,ay=c[1]+d2y/l2*r;
+    d+=` L${bx.toFixed(1)},${by.toFixed(1)} Q${c[0].toFixed(1)},${c[1].toFixed(1)} ${ax.toFixed(1)},${ay.toFixed(1)}`;
   }
-
-  // Apply setback to last segment end
-  const last = pts.length - 1;
-  const prev = pts[last-1];
-  const end  = pts[last];
-  const sb   = setback(prev[0], prev[1], end[0], end[1], SETBACK);
-  pts[last]  = [sb.x, sb.y];
-
-  if (pts.length === 2) {
-    // Straight line, no corners
-    return `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)} L${pts[1][0].toFixed(1)},${pts[1][1].toFixed(1)}`;
-  }
-
-  // Build path with rounded corners at each interior point
-  let d = `M${pts[0][0].toFixed(1)},${pts[0][1].toFixed(1)}`;
-  for (let i = 1; i < pts.length - 1; i++) {
-    const prev = pts[i-1], cur = pts[i], next = pts[i+1];
-    // Vector from prev→cur and cur→next
-    const d1x = cur[0]-prev[0], d1y = cur[1]-prev[1];
-    const d2x = next[0]-cur[0], d2y = next[1]-cur[1];
-    const len1 = Math.hypot(d1x, d1y);
-    const len2 = Math.hypot(d2x, d2y);
-    const r = Math.min(CORNER_R, len1/2, len2/2);
-    // Point before corner (on incoming segment)
-    const bx = cur[0] - d1x/len1*r;
-    const by = cur[1] - d1y/len1*r;
-    // Point after corner (on outgoing segment)
-    const ax = cur[0] + d2x/len2*r;
-    const ay = cur[1] + d2y/len2*r;
-    d += ` L${bx.toFixed(1)},${by.toFixed(1)} Q${cur[0].toFixed(1)},${cur[1].toFixed(1)} ${ax.toFixed(1)},${ay.toFixed(1)}`;
-  }
-  const fin = pts[pts.length-1];
-  d += ` L${fin[0].toFixed(1)},${fin[1].toFixed(1)}`;
+  const fin=pts[pts.length-1];
+  d+=` L${fin[0].toFixed(1)},${fin[1].toFixed(1)}`;
   return d;
 }
 
-// ─── Mode ─────────────────────────────────────────────────────────────────────
-function setMode(m) {
-  mode = m;
-  document.getElementById('btn-select').classList.toggle('active', m==='select');
-  document.getElementById('btn-connect').classList.toggle('active', m==='connect');
-  document.getElementById('st-mode').textContent = m==='select'?'Select':'Connect';
-  wrap.classList.toggle('connect-mode', m==='connect');
-  if (m==='select') { cancelConn(); cancelFreehand(); }
+// ── Mode ───────────────────────────────────────────────────────────────────────
+function setMode(m){
+  mode=m;
+  document.getElementById('btn-select').classList.toggle('active',m==='select');
+  document.getElementById('btn-connect').classList.toggle('active',m==='connect');
+  document.getElementById('st-mode').textContent=m==='select'?'Select':'Connect';
+  wrap.classList.toggle('connect-mode',m==='connect');
+  if(m==='select'){cancelConn();cancelFreehand();}
 }
 
-// ─── Selection ────────────────────────────────────────────────────────────────
-function selectNode(id, additive=false) {
-  if (!additive) deselectAll();
-  if (id) { selected.add(id); highlightNode(id, true); }
+// ── Selection ──────────────────────────────────────────────────────────────────
+function selectNode(id,additive=false){
+  if(!additive)deselectAll();
+  if(id){selected.add(id);highlightNode(id,true);nodes[id]?.g.classList.add('selected');}
 }
-function deselectAll() {
-  selected.forEach(id => highlightNode(id, false));
+function deselectAll(){
+  selected.forEach(id=>{highlightNode(id,false);nodes[id]?.g.classList.remove('selected');});
   selected.clear();
-  selectedEdges.forEach(id => highlightEdge(id, false));
+  selectedEdges.forEach(id=>highlightEdge(id,false));
   selectedEdges.clear();
 }
+function highlightEdge(id,on){
+  const e=edges.find(e=>e.id===id);if(!e)return;
+  e.pathEl.setAttribute('stroke',on?'#E8503A':'#6B7280');
+  e.pathEl.setAttribute('stroke-width',on?'2.5':'2');
+  e.pathEl.setAttribute('marker-end',on?'url(#arrow-sel)':'url(#arrow)');
+}
+function highlightNode(id,on){
+  const n=nodes[id];if(!n)return;
+  if(on){n.bodyEl.setAttribute('stroke','#E8503A');n.bodyEl.setAttribute('stroke-width','2.5');}
+  else  {n.bodyEl.setAttribute('stroke',shapeStroke(n.shape));n.bodyEl.setAttribute('stroke-width','1.5');}
+}
+function shapeStroke(s){return{step:'#D1D5DB',decision:'#FCD34D',terminal:'#86EFAC',action:'#93C5FD'}[s]||'#D1D5DB';}
+function shapeFill(s){return{step:'#ffffff',decision:'#FFFBEB',terminal:'#F0FDF4',action:'#EFF6FF'}[s]||'#fff';}
 
-function highlightEdge(id, on) {
-  const edge = edges.find(e => e.id === id);
-  if (!edge) return;
-  edge.pathEl.setAttribute('stroke', on ? '#E8503A' : '#6B7280');
-  edge.pathEl.setAttribute('stroke-width', on ? '2.5' : '2');
-  edge.pathEl.setAttribute('marker-end', on ? 'url(#arrow-sel)' : 'url(#arrow)');
-}
-function highlightNode(id, on) {
-  const n = nodes[id];
-  if (!n) return;
-  if (on) n.bodyEl.setAttribute('stroke', '#E8503A'), n.bodyEl.setAttribute('stroke-width','2.5');
-  else     n.bodyEl.setAttribute('stroke', shapeStroke(n.shape)), n.bodyEl.setAttribute('stroke-width','1.5');
-}
-function shapeStroke(shape) {
-  return {step:'#D1D5DB',decision:'#FCD34D',terminal:'#86EFAC',action:'#93C5FD'}[shape]||'#D1D5DB';
-}
-function shapeFill(shape) {
-  return {step:'#ffffff',decision:'#FFFBEB',terminal:'#F0FDF4',action:'#EFF6FF'}[shape]||'#fff';
-}
-
-// ─── Node dimensions ──────────────────────────────────────────────────────────
-function nodeDims(shape) {
-  if (shape==='decision') return { w: DIAM_W, h: DIAM_H };
-  if (shape==='terminal') return { w: NODE_W, h: TERM_H };
-  return { w: NODE_W, h: NODE_H };
-}
-
-// ─── Add node ─────────────────────────────────────────────────────────────────
-function addNode(shape, x, y, label) {
-  const id = 'n'+(++nodeCounter);
-  const { w, h } = nodeDims(shape);
-  if (x==null) {
-    x = wrap.offsetWidth/2 - w/2 + (Math.random()*40-20);
-    y = wrap.offsetHeight/2 - h/2 + (Math.random()*40-20);
+// ── Update node geometry after resize ─────────────────────────────────────────
+function updateNodeGeometry(id){
+  const n=nodes[id];if(!n)return;
+  const{shape,w,h,bodyEl,foEl,portEls,resizeEl}=n;
+  if(shape==='decision'){
+    bodyEl.setAttribute('points',`${w/2},0 ${w},${h/2} ${w/2},${h} 0,${h/2}`);
+  }else{
+    bodyEl.setAttribute('width',w);bodyEl.setAttribute('height',h);
+    if(shape==='terminal')bodyEl.setAttribute('rx',h/2);
   }
-  label = label || {step:'Step',decision:'Decision?',terminal:'Start/End',action:'Action'}[shape]||'Node';
+  foEl.setAttribute('width',w);foEl.setAttribute('height',h);
+  ['n','s','e','w'].forEach(p=>{
+    const o=portOffset(n,p);
+    portEls[p].setAttribute('cx',o.x);portEls[p].setAttribute('cy',o.y);
+  });
+  if(resizeEl){resizeEl.setAttribute('x',w-10);resizeEl.setAttribute('y',h-10);}
+}
 
-  const g = svgEl('g', { class:'node-g', 'data-id':id, 'data-shape':shape });
-  g.style.cursor = 'grab';
+// ── Add node ───────────────────────────────────────────────────────────────────
+function nodeDims(shape){
+  if(shape==='decision')return{w:DIAM_W,h:DIAM_H};
+  if(shape==='terminal')return{w:NODE_W,h:TERM_H};
+  return{w:NODE_W,h:NODE_H};
+}
+
+function addNode(shape,x,y,label){
+  const id='n'+(++nodeCounter);
+  const{w,h}=nodeDims(shape);
+  if(x==null){
+    x=wrap.offsetWidth/2-w/2+(Math.random()*40-20);
+    y=wrap.offsetHeight/2-h/2+(Math.random()*40-20);
+  }
+  label=label||{step:'Step',decision:'Decision?',terminal:'Start/End',action:'Action'}[shape]||'Node';
+
+  const g=svgEl('g',{class:'node-g','data-id':id,'data-shape':shape});
+  g.style.cursor='grab';
 
   let bodyEl;
-  if (shape==='decision') {
-    // Draw diamond as polygon
-    const cx=w/2, cy=h/2;
-    bodyEl = svgEl('polygon', {
-      points:`${cx},0 ${w},${cy} ${cx},${h} 0,${cy}`,
-      fill: shapeFill(shape), stroke: shapeStroke(shape), 'stroke-width':'1.5'
-    });
-  } else if (shape==='terminal') {
-    bodyEl = svgEl('rect', {
-      x:0, y:0, width:w, height:h, rx: h/2,
-      fill: shapeFill(shape), stroke: shapeStroke(shape), 'stroke-width':'1.5'
-    });
-  } else {
-    bodyEl = svgEl('rect', {
-      x:0, y:0, width:w, height:h, rx: shape==='step'?6:3,
-      fill: shapeFill(shape), stroke: shapeStroke(shape), 'stroke-width':'1.5'
-    });
+  if(shape==='decision'){
+    bodyEl=svgEl('polygon',{points:`${w/2},0 ${w},${h/2} ${w/2},${h} 0,${h/2}`,fill:shapeFill(shape),stroke:shapeStroke(shape),'stroke-width':'1.5'});
+  }else if(shape==='terminal'){
+    bodyEl=svgEl('rect',{x:0,y:0,width:w,height:h,rx:h/2,fill:shapeFill(shape),stroke:shapeStroke(shape),'stroke-width':'1.5'});
+  }else{
+    bodyEl=svgEl('rect',{x:0,y:0,width:w,height:h,rx:shape==='step'?6:3,fill:shapeFill(shape),stroke:shapeStroke(shape),'stroke-width':'1.5'});
   }
   g.appendChild(bodyEl);
 
-  // Text
-  const textEl = svgEl('text', {
-    x: w/2, y: h/2+1,
-    'text-anchor':'middle', 'dominant-baseline':'middle',
-    'font-size':'12', 'font-family':'Inter,system-ui,sans-serif', fill:'#1B2B4B',
-    'pointer-events':'none'
-  });
-  textEl.textContent = label;
-  g.appendChild(textEl);
+  // ForeignObject for word-wrapping text
+  const foEl=svgEl('foreignObject',{x:0,y:0,width:w,height:h});
+  const labelDiv=document.createElement('div');
+  labelDiv.className='node-label';
+  labelDiv.textContent=label;
+  foEl.appendChild(labelDiv);
+  g.appendChild(foEl);
 
-  // Port dots (visible on hover / in connect mode)
-  const portEls = {};
-  ['n','s','e','w'].forEach(p => {
-    const off = portOffset({w,h}, p);
-    const dot = svgEl('circle', {
-      cx: off.x, cy: off.y, r:5,
-      fill:'#fff', stroke:'#9CA3AF', 'stroke-width':'2',
-      class:'port', 'data-port':p, 'data-node':id,
-      style:'cursor:crosshair; display:none;'
-    });
-    g.appendChild(dot);
-    portEls[p] = dot;
+  // Port dots
+  const portEls={};
+  ['n','s','e','w'].forEach(p=>{
+    const o=portOffset({w,h},p);
+    const dot=svgEl('circle',{cx:o.x,cy:o.y,r:5,fill:'#fff',stroke:'#9CA3AF','stroke-width':'2',class:'port','data-port':p,'data-node':id,style:'cursor:crosshair;display:none;'});
+    g.appendChild(dot);portEls[p]=dot;
   });
 
-  g.addEventListener('mousedown', onNodeMousedown);
-  g.addEventListener('dblclick',  onNodeDblclick);
-  g.addEventListener('mouseenter', () => {
-    if (mode==='connect') Object.values(portEls).forEach(d=>d.style.display='');
-  });
-  g.addEventListener('mouseleave', () => {
-    Object.values(portEls).forEach(d=>d.style.display='none');
-    clearSnapHighlight();
-  });
+  // Resize handle (bottom-right corner)
+  const resizeEl=svgEl('rect',{x:w-10,y:h-10,width:10,height:10,rx:2,class:'resize-handle','data-node':id});
+  g.appendChild(resizeEl);
 
-  // Port mousedown handlers
-  Object.entries(portEls).forEach(([p, dot]) => {
-    dot.addEventListener('mousedown', e => {
-      if (mode!=='connect') return;
-      e.stopPropagation(); e.preventDefault();
-      const pt = portPos(id, p);
-      conn = { fromId:id, fromPort:p };
-      previewLn.style.display = '';
-      previewLn.setAttribute('d', `M${pt.x},${pt.y} L${pt.x},${pt.y}`);
+  // Events
+  g.addEventListener('mousedown',onNodeMousedown);
+  g.addEventListener('dblclick',onNodeDblclick);
+  g.addEventListener('mouseenter',()=>{if(mode==='connect')Object.values(portEls).forEach(d=>d.style.display='');});
+  g.addEventListener('mouseleave',()=>{Object.values(portEls).forEach(d=>d.style.display='none');clearSnapHighlight();});
+
+  Object.entries(portEls).forEach(([p,dot])=>{
+    dot.addEventListener('mousedown',e=>{
+      if(mode!=='connect')return;
+      e.stopPropagation();e.preventDefault();
+      const pt=portPos(id,p);
+      conn={fromId:id,fromPort:p};
+      previewLn.style.display='';
+      previewLn.setAttribute('d',`M${pt.x},${pt.y} L${pt.x},${pt.y}`);
     });
   });
 
-  // Position
-  g.setAttribute('transform', `translate(${x},${y})`);
+  resizeEl.addEventListener('mousedown',e=>{
+    if(mode!=='select')return;
+    e.stopPropagation();e.preventDefault();
+    const pt=c2w(e.clientX,e.clientY);
+    const n=nodes[id];
+    resize={nodeId:id,startW:n.w,startH:n.h,startPt:pt};
+  });
+
+  g.setAttribute('transform',`translate(${x},${y})`);
   nodesG.appendChild(g);
-
-  nodes[id] = { id, shape, x, y, w, h, label, g, bodyEl, textEl, portEls };
+  nodes[id]={id,shape,x,y,w,h,label,g,bodyEl,foEl,labelDiv,portEls,resizeEl};
   updateStatus();
   return id;
 }
 
-// ─── Node interactions ────────────────────────────────────────────────────────
-function onNodeMousedown(e) {
-  if (e.target.classList.contains('port')) return;
-  if (mode!=='select') return;
+// ── Node interactions ──────────────────────────────────────────────────────────
+function onNodeMousedown(e){
+  if(e.target.classList.contains('port'))return;
+  if(e.target.classList.contains('resize-handle'))return;
+  if(e.target.classList.contains('node-label')&&e.target.classList.contains('editing'))return;
+  if(mode!=='select')return;
   e.stopPropagation();
-
-  const id = e.currentTarget.dataset.id;
-
-  if (e.shiftKey) {
-    if (selected.has(id)) { selected.delete(id); highlightNode(id,false); }
-    else selectNode(id, true);
+  const id=e.currentTarget.dataset.id;
+  if(editingNodeId&&editingNodeId!==id)commitEdit(editingNodeId);
+  if(e.shiftKey){
+    if(selected.has(id)){selected.delete(id);highlightNode(id,false);nodes[id]?.g.classList.remove('selected');}
+    else selectNode(id,true);
     return;
   }
-  if (!selected.has(id)) selectNode(id, false);
-
-  const wPt = c2w(e.clientX, e.clientY);
-  const nodeStarts = {};
-  selected.forEach(sid => nodeStarts[sid] = {x:nodes[sid].x, y:nodes[sid].y});
-  if (!selected.has(id)) { selectNode(id,false); nodeStarts[id]={x:nodes[id].x,y:nodes[id].y}; }
-  drag = { startPt: wPt, nodeStarts };
+  if(!selected.has(id))selectNode(id,false);
+  const wPt=c2w(e.clientX,e.clientY);
+  const nodeStarts={};
+  selected.forEach(sid=>nodeStarts[sid]={x:nodes[sid].x,y:nodes[sid].y});
+  drag={startPt:wPt,nodeStarts};
 }
 
-function onNodeDblclick(e) {
-  if (e.target.classList.contains('port')) return;
+function onNodeDblclick(e){
+  if(e.target.classList.contains('port'))return;
+  if(e.target.classList.contains('resize-handle'))return;
   e.stopPropagation();
-  const id = e.currentTarget.dataset.id;
-  const n = nodes[id];
-
-  // Inline SVG text edit via foreign object temporarily, or simpler: prompt
-  const newLabel = prompt('Edit label:', n.label);
-  if (newLabel !== null && newLabel.trim()) {
-    n.label = newLabel.trim();
-    n.textEl.textContent = n.label;
-    redrawEdges();
-  }
+  if(mode!=='select')return;
+  startInlineEdit(e.currentTarget.dataset.id);
 }
 
-// ─── Canvas events ────────────────────────────────────────────────────────────
-wrap.addEventListener('mousedown', e => {
-  const isBackground = e.target===wrap || e.target===mainSvg ||
-                       e.target===edgesG || e.target===nodesG || e.target===selBoxEl;
-  if (!isBackground) return;
+function startInlineEdit(id){
+  if(editingNodeId===id)return;
+  if(editingNodeId)commitEdit(editingNodeId);
+  const n=nodes[id];
+  editingNodeId=id;
+  n.labelDiv.classList.add('editing');
+  n.labelDiv.contentEditable='true';
+  n.g.style.cursor='text';
+  const range=document.createRange();
+  range.selectNodeContents(n.labelDiv);
+  const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
+  n.labelDiv.focus();
+  n.labelDiv.addEventListener('keydown',onLabelKeydown);
+  n.labelDiv.addEventListener('blur',()=>commitEdit(id),{once:true});
+}
 
-  const pt = c2w(e.clientX, e.clientY);
+function onLabelKeydown(e){
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(editingNodeId)commitEdit(editingNodeId);}
+  if(e.key==='Escape'){const n=nodes[editingNodeId];if(n){n.labelDiv.textContent=n.label;commitEdit(editingNodeId);}}
+  e.stopPropagation();
+}
 
-  if (mode==='select') {
+function commitEdit(id){
+  const n=nodes[id];if(!n){editingNodeId=null;return;}
+  const newLabel=n.labelDiv.textContent.trim()||n.label;
+  n.label=newLabel;n.labelDiv.textContent=newLabel;
+  n.labelDiv.classList.remove('editing');n.labelDiv.contentEditable='false';
+  n.g.style.cursor='grab';
+  n.labelDiv.removeEventListener('keydown',onLabelKeydown);
+  editingNodeId=null;redrawEdges();
+}
+
+// ── Canvas events ──────────────────────────────────────────────────────────────
+wrap.addEventListener('mousedown',e=>{
+  if(editingNodeId)commitEdit(editingNodeId);
+  const isBackground=e.target===wrap||e.target===mainSvg||e.target===edgesG||e.target===nodesG||e.target===selBoxEl;
+  if(!isBackground)return;
+  const pt=c2w(e.clientX,e.clientY);
+  if(mode==='select'){
     deselectAll();
-    selBox = {startX:pt.x,startY:pt.y,curX:pt.x,curY:pt.y};
+    selBox={startX:pt.x,startY:pt.y,curX:pt.x,curY:pt.y};
     selBoxEl.style.display='block';
-    selBoxEl.style.cssText += `;left:${pt.x}px;top:${pt.y}px;width:0;height:0;`;
+    selBoxEl.style.left=pt.x+'px';selBoxEl.style.top=pt.y+'px';
+    selBoxEl.style.width='0';selBoxEl.style.height='0';
   }
-  if (mode==='connect') {
-    // Freehand: see if mouse is near a node to start
-    freehand = { pts:[pt], pathStr:`M${pt.x},${pt.y}` };
-    freehandP.style.display = '';
-    freehandP.setAttribute('d', freehand.pathStr);
+  if(mode==='connect'){
+    freehand={pts:[pt],pathStr:`M${pt.x},${pt.y}`};
+    freehandP.style.display='';
+    freehandP.setAttribute('d',freehand.pathStr);
   }
 });
 
-document.addEventListener('mousemove', e => {
-  const pt = c2w(e.clientX, e.clientY);
+document.addEventListener('mousemove',e=>{
+  const pt=c2w(e.clientX,e.clientY);
 
-  if (drag) {
-    const dx = pt.x - drag.startPt.x;
-    const dy = pt.y - drag.startPt.y;
-    Object.entries(drag.nodeStarts).forEach(([sid,start]) => {
-      const n = nodes[sid];
-      if (!n) return;
-      n.x = start.x+dx; n.y = start.y+dy;
-      n.g.setAttribute('transform', `translate(${n.x},${n.y})`);
-    });
-    redrawEdges();
+  if(resize){
+    const n=nodes[resize.nodeId];if(!n){resize=null;return;}
+    const dx=pt.x-resize.startPt.x,dy=pt.y-resize.startPt.y;
+    n.w=Math.max(MIN_W[n.shape]||80,resize.startW+dx);
+    n.h=Math.max(MIN_H[n.shape]||36,resize.startH+dy);
+    updateNodeGeometry(resize.nodeId);redrawEdges();
     return;
   }
 
-  if (selBox) {
-    selBox.curX=pt.x; selBox.curY=pt.y;
-    const rx=Math.min(selBox.startX,pt.x), ry=Math.min(selBox.startY,pt.y);
-    const rw=Math.abs(pt.x-selBox.startX), rh=Math.abs(pt.y-selBox.startY);
-    selBoxEl.style.left=rx+'px'; selBoxEl.style.top=ry+'px';
-    selBoxEl.style.width=rw+'px'; selBoxEl.style.height=rh+'px';
+  if(drag){
+    const dx=pt.x-drag.startPt.x,dy=pt.y-drag.startPt.y;
+    Object.entries(drag.nodeStarts).forEach(([sid,start])=>{
+      const n=nodes[sid];if(!n)return;
+      n.x=start.x+dx;n.y=start.y+dy;
+      n.g.setAttribute('transform',`translate(${n.x},${n.y})`);
+    });
+    redrawEdges();return;
+  }
+
+  if(selBox){
+    selBox.curX=pt.x;selBox.curY=pt.y;
+    const rx=Math.min(selBox.startX,pt.x),ry=Math.min(selBox.startY,pt.y);
+    const rw=Math.abs(pt.x-selBox.startX),rh=Math.abs(pt.y-selBox.startY);
+    selBoxEl.style.left=rx+'px';selBoxEl.style.top=ry+'px';
+    selBoxEl.style.width=rw+'px';selBoxEl.style.height=rh+'px';
     deselectAll();
-    Object.values(nodes).forEach(n => {
-      const cx=n.x+n.w/2, cy=n.y+n.h/2;
-      if (cx>rx&&cx<rx+rw&&cy>ry&&cy<ry+rh) selectNode(n.id,true);
+    Object.values(nodes).forEach(n=>{
+      const cx=n.x+n.w/2,cy=n.y+n.h/2;
+      if(cx>rx&&cx<rx+rw&&cy>ry&&cy<ry+rh)selectNode(n.id,true);
     });
-    // Also select edges whose midpoint or any sampled point falls in the box
-    edges.forEach(edge => {
-      if (edgeInBox(edge, rx, ry, rw, rh)) {
-        selectedEdges.add(edge.id);
-        highlightEdge(edge.id, true);
-      }
+    edges.forEach(edge=>{
+      if(edgeInBox(edge,rx,ry,rw,rh)){selectedEdges.add(edge.id);highlightEdge(edge.id,true);}
     });
     return;
   }
 
-  if (conn) {
-    // Snap to nearby port
-    snapPort = null;
-    let bestD = 28;
-    Object.values(nodes).forEach(n => {
-      if (n.id===conn.fromId) return;
-      ['n','s','e','w'].forEach(p => {
-        const pp = portPos(n.id, p);
-        const d  = Math.hypot(pp.x-pt.x, pp.y-pt.y);
-        if (d<bestD) { bestD=d; snapPort={nodeId:n.id,port:p}; }
+  if(conn){
+    snapPort=null;let bestD=28;
+    Object.values(nodes).forEach(n=>{
+      if(n.id===conn.fromId)return;
+      ['n','s','e','w'].forEach(p=>{
+        const pp=portPos(n.id,p),d=Math.hypot(pp.x-pt.x,pp.y-pt.y);
+        if(d<bestD){bestD=d;snapPort={nodeId:n.id,port:p};}
       });
     });
     updateSnapHighlight();
-    const src = portPos(conn.fromId, conn.fromPort);
-    const tgt = snapPort ? portPos(snapPort.nodeId,snapPort.port) : pt;
-    previewLn.setAttribute('d', straightPath(src.x,src.y,tgt.x,tgt.y,conn.fromPort,snapPort?.port||'n'));
+    const src=portPos(conn.fromId,conn.fromPort);
+    const tgt=snapPort?portPos(snapPort.nodeId,snapPort.port):pt;
+    previewLn.setAttribute('d',straightPath(src.x,src.y,tgt.x,tgt.y,conn.fromPort,snapPort?.port||'n'));
     return;
   }
 
-  if (freehand) {
+  if(freehand){
     freehand.pts.push(pt);
-    freehand.pathStr += ` L${pt.x.toFixed(1)},${pt.y.toFixed(1)}`;
-    freehandP.setAttribute('d', freehand.pathStr);
+    freehand.pathStr+=` L${pt.x.toFixed(1)},${pt.y.toFixed(1)}`;
+    freehandP.setAttribute('d',freehand.pathStr);
   }
 });
 
-document.addEventListener('mouseup', e => {
-  const pt = c2w(e.clientX, e.clientY);
-
-  if (drag) { drag=null; return; }
-
-  if (selBox) {
-    selBox=null; selBoxEl.style.display='none';
-    return;
-  }
-
-  if (conn) {
+document.addEventListener('mouseup',e=>{
+  const pt=c2w(e.clientX,e.clientY);
+  if(resize){resize=null;return;}
+  if(drag){drag=null;return;}
+  if(selBox){selBox=null;selBoxEl.style.display='none';return;}
+  if(conn){
     clearSnapHighlight();
-    previewLn.style.display='none';
-    previewLn.setAttribute('d','');
-    if (snapPort) finishConn(snapPort.nodeId, snapPort.port);
-    conn=null; snapPort=null;
-    return;
+    previewLn.style.display='none';previewLn.setAttribute('d','');
+    if(snapPort)finishConn(snapPort.nodeId,snapPort.port);
+    conn=null;snapPort=null;return;
   }
-
-  if (freehand) {
-    freehandP.style.display='none';
-    freehandP.setAttribute('d','');
-    finishFreehand(freehand.pts, pt);
-    freehand=null;
+  if(freehand){
+    freehandP.style.display='none';freehandP.setAttribute('d','');
+    finishFreehand(freehand.pts,pt);freehand=null;
   }
 });
 
-// ─── Connection helpers ───────────────────────────────────────────────────────
-function finishConn(toId, toPort) {
-  if (!conn) return;
-  const dup = edges.find(e=>e.from===conn.fromId&&e.fromPort===conn.fromPort&&e.to===toId&&e.toPort===toPort);
-  if (dup) return;
-
+// ── Connection helpers ─────────────────────────────────────────────────────────
+function finishConn(toId,toPort){
+  if(!conn)return;
+  const dup=edges.find(e=>e.from===conn.fromId&&e.fromPort===conn.fromPort&&e.to===toId&&e.toPort===toPort);
+  if(dup)return;
   const id='e'+(++edgeCounter);
-  const pathEl = svgEl('path', {
-    stroke:'#6B7280','stroke-width':'2',fill:'none',
-    'marker-end':'url(#arrow)',
-    style:'cursor:pointer;',
-    // Wide invisible stroke for easy clicking
-    'stroke-linecap':'round'
-  });
-  // Invisible wide hit area
-  const hitEl = svgEl('path', {
-    stroke:'transparent','stroke-width':'12',fill:'none',style:'cursor:pointer;'
-  });
-  hitEl.dataset.edgeId = id;
-  hitEl.addEventListener('click', onEdgeClick);
-  pathEl.dataset.edgeId = id;
-  pathEl.addEventListener('click', onEdgeClick);
-  edgesG.appendChild(pathEl);
-  edgesG.appendChild(hitEl);
-
-  const labelEl = document.createElement('div');
-  labelEl.className='edge-label';
-  labelEl.dataset.edgeId=id;
-  labelEl.style.display='none';
+  const pathEl=svgEl('path',{stroke:'#6B7280','stroke-width':'2',fill:'none','marker-end':'url(#arrow)',style:'cursor:pointer;','stroke-linecap':'round'});
+  const hitEl=svgEl('path',{stroke:'transparent','stroke-width':'12',fill:'none',style:'cursor:pointer;'});
+  hitEl.dataset.edgeId=id;hitEl.addEventListener('click',onEdgeClick);
+  pathEl.dataset.edgeId=id;pathEl.addEventListener('click',onEdgeClick);
+  edgesG.appendChild(pathEl);edgesG.appendChild(hitEl);
+  const labelEl=document.createElement('div');
+  labelEl.className='edge-label';labelEl.dataset.edgeId=id;labelEl.style.display='none';
   wrap.appendChild(labelEl);
-
-  const edge = {id, from:conn.fromId, fromPort:conn.fromPort, to:toId, toPort, label:'', pathEl, hitEl, labelEl};
-  edges.push(edge);
-  redrawEdge(edge);
-  updateStatus();
+  const edge={id,from:conn.fromId,fromPort:conn.fromPort,to:toId,toPort,label:'',pathEl,hitEl,labelEl};
+  edges.push(edge);redrawEdge(edge);updateStatus();
 }
 
-function finishFreehand(pts, endPt) {
-  if (pts.length < 3) return;
-  const startPt = pts[0];
-
-  // Hit-test: find node containing start point
-  let fromNode=null, fromDist=40;
-  Object.values(nodes).forEach(n => {
-    if (startPt.x>=n.x-8 && startPt.x<=n.x+n.w+8 && startPt.y>=n.y-8 && startPt.y<=n.y+n.h+8) {
-      const d=Math.hypot(startPt.x-n.x-n.w/2, startPt.y-n.y-n.h/2);
-      if (d<fromDist) { fromDist=d; fromNode=n.id; }
+function finishFreehand(pts,endPt){
+  if(pts.length<3)return;
+  const startPt=pts[0];
+  let fromNode=null,fromDist=40;
+  Object.values(nodes).forEach(n=>{
+    if(startPt.x>=n.x-8&&startPt.x<=n.x+n.w+8&&startPt.y>=n.y-8&&startPt.y<=n.y+n.h+8){
+      const d=Math.hypot(startPt.x-n.x-n.w/2,startPt.y-n.y-n.h/2);
+      if(d<fromDist){fromDist=d;fromNode=n.id;}
     }
   });
-
-  let toNode=null, toDist=40;
-  Object.values(nodes).forEach(n => {
-    if (endPt.x>=n.x-8 && endPt.x<=n.x+n.w+8 && endPt.y>=n.y-8 && endPt.y<=n.y+n.h+8) {
-      const d=Math.hypot(endPt.x-n.x-n.w/2, endPt.y-n.y-n.h/2);
-      if (d<toDist) { toDist=d; toNode=n.id; }
+  let toNode=null,toDist=40;
+  Object.values(nodes).forEach(n=>{
+    if(endPt.x>=n.x-8&&endPt.x<=n.x+n.w+8&&endPt.y>=n.y-8&&endPt.y<=n.y+n.h+8){
+      const d=Math.hypot(endPt.x-n.x-n.w/2,endPt.y-n.y-n.h/2);
+      if(d<toDist){toDist=d;toNode=n.id;}
     }
   });
-
-  if (!fromNode || !toNode || fromNode===toNode) return;
-
-  // Determine best ports from the stroke direction
-  const fromPort = bestPortForDir(fromNode, endPt.x-startPt.x, endPt.y-startPt.y, 'from');
-  const toPort   = bestPortForDir(toNode,   startPt.x-endPt.x, startPt.y-endPt.y, 'to');
-
-  const dup = edges.find(e=>e.from===fromNode&&e.to===toNode);
-  if (dup) return;
-
-  conn = {fromId:fromNode, fromPort};
-  finishConn(toNode, toPort);
-  conn = null;
+  if(!fromNode||!toNode||fromNode===toNode)return;
+  const fromPort=bestPortForDir(fromNode,endPt.x-startPt.x,endPt.y-startPt.y);
+  const toPort=bestPortForDir(toNode,startPt.x-endPt.x,startPt.y-endPt.y);
+  if(edges.find(e=>e.from===fromNode&&e.to===toNode))return;
+  conn={fromId:fromNode,fromPort};finishConn(toNode,toPort);conn=null;
 }
 
-function bestPortForDir(nodeId, dx, dy, role) {
-  // Pick port based on dominant direction of the stroke
-  if (Math.abs(dx) > Math.abs(dy)) return dx>0 ? 'e' : 'w';
-  return dy>0 ? 's' : 'n';
+function bestPortForDir(nodeId,dx,dy){
+  if(Math.abs(dx)>Math.abs(dy))return dx>0?'e':'w';
+  return dy>0?'s':'n';
 }
 
-function cancelConn() {
-  conn=null; snapPort=null;
-  previewLn.style.display='none';
-  previewLn.setAttribute('d','');
-  clearSnapHighlight();
-}
-function cancelFreehand() {
-  freehand=null;
-  freehandP.style.display='none';
-  freehandP.setAttribute('d','');
-}
+function cancelConn(){conn=null;snapPort=null;previewLn.style.display='none';previewLn.setAttribute('d','');clearSnapHighlight();}
+function cancelFreehand(){freehand=null;freehandP.style.display='none';freehandP.setAttribute('d','');}
 
-function updateSnapHighlight() {
-  // Show highlighted port dot on snap target
-  Object.values(nodes).forEach(n => {
-    Object.entries(n.portEls).forEach(([p,dot]) => {
-      const isSnap = snapPort && n.id===snapPort.nodeId && p===snapPort.port;
-      if (isSnap) {
-        dot.style.display='';
-        dot.setAttribute('fill','#E8503A');
-        dot.setAttribute('stroke','#E8503A');
-      } else if (n.id===conn?.fromId) {
-        // keep from-node ports visible
-      } else {
-        // show all ports on nearby nodes, hide rest
-        dot.style.display='none';
-        dot.setAttribute('fill','#fff');
-        dot.setAttribute('stroke','#9CA3AF');
-      }
+function updateSnapHighlight(){
+  Object.values(nodes).forEach(n=>{
+    Object.entries(n.portEls).forEach(([p,dot])=>{
+      const isSnap=snapPort&&n.id===snapPort.nodeId&&p===snapPort.port;
+      if(isSnap){dot.style.display='';dot.setAttribute('fill','#E8503A');dot.setAttribute('stroke','#E8503A');}
+      else if(n.id===conn?.fromId){}
+      else{dot.style.display='none';dot.setAttribute('fill','#fff');dot.setAttribute('stroke','#9CA3AF');}
     });
   });
-  // Show all ports on potential target nodes
-  if (snapPort) {
-    const n = nodes[snapPort.nodeId];
-    if (n) Object.values(n.portEls).forEach(d=>d.style.display='');
-  }
+  if(snapPort){const n=nodes[snapPort.nodeId];if(n)Object.values(n.portEls).forEach(d=>d.style.display='');}
 }
 
-function clearSnapHighlight() {
-  Object.values(nodes).forEach(n => {
-    Object.values(n.portEls).forEach(dot => {
-      dot.style.display='none';
-      dot.setAttribute('fill','#fff');
-      dot.setAttribute('stroke','#9CA3AF');
-    });
+function clearSnapHighlight(){
+  Object.values(nodes).forEach(n=>{
+    Object.values(n.portEls).forEach(dot=>{dot.style.display='none';dot.setAttribute('fill','#fff');dot.setAttribute('stroke','#9CA3AF');});
   });
 }
 
-// ─── Edge-in-box hit test ────────────────────────────────────────────────────
-// Sample several points along the edge path and check if any fall in the rect.
-function edgeInBox(edge, rx, ry, rw, rh) {
-  const p1 = portPos(edge.from, edge.fromPort);
-  const p2 = portPos(edge.to,   edge.toPort);
-
-  // Build the same polyline straightPath produces, sample points along it
-  const fromV = edge.fromPort==='n'||edge.fromPort==='s';
-  const toV   = edge.toPort==='n'||edge.toPort==='s';
+// ── Edge-in-box hit test ───────────────────────────────────────────────────────
+function edgeInBox(edge,rx,ry,rw,rh){
+  const p1=portPos(edge.from,edge.fromPort),p2=portPos(edge.to,edge.toPort);
+  const fv=edge.fromPort==='n'||edge.fromPort==='s',tv=edge.toPort==='n'||edge.toPort==='s';
   let pts;
-  if (fromV && toV) {
-    const my=(p1.y+p2.y)/2;
-    pts=[[p1.x,p1.y],[p1.x,my],[p2.x,my],[p2.x,p2.y]];
-  } else if (!fromV && !toV) {
-    const mx=(p1.x+p2.x)/2;
-    pts=[[p1.x,p1.y],[mx,p1.y],[mx,p2.y],[p2.x,p2.y]];
-  } else if (fromV) {
-    pts=[[p1.x,p1.y],[p1.x,p2.y],[p2.x,p2.y]];
-  } else {
-    pts=[[p1.x,p1.y],[p2.x,p1.y],[p2.x,p2.y]];
-  }
-
-  // Check each segment: sample 8 points per segment
-  for (let i=0;i<pts.length-1;i++) {
+  if(fv&&tv){const my=(p1.y+p2.y)/2;pts=[[p1.x,p1.y],[p1.x,my],[p2.x,my],[p2.x,p2.y]];}
+  else if(!fv&&!tv){const mx=(p1.x+p2.x)/2;pts=[[p1.x,p1.y],[mx,p1.y],[mx,p2.y],[p2.x,p2.y]];}
+  else if(fv) pts=[[p1.x,p1.y],[p1.x,p2.y],[p2.x,p2.y]];
+  else        pts=[[p1.x,p1.y],[p2.x,p1.y],[p2.x,p2.y]];
+  for(let i=0;i<pts.length-1;i++){
     const ax=pts[i][0],ay=pts[i][1],bx=pts[i+1][0],by=pts[i+1][1];
-    for (let t=0;t<=1;t+=0.125) {
-      const sx=ax+(bx-ax)*t, sy=ay+(by-ay)*t;
-      if (sx>=rx&&sx<=rx+rw&&sy>=ry&&sy<=ry+rh) return true;
+    for(let t=0;t<=1;t+=0.125){
+      const sx=ax+(bx-ax)*t,sy=ay+(by-ay)*t;
+      if(sx>=rx&&sx<=rx+rw&&sy>=ry&&sy<=ry+rh)return true;
     }
   }
   return false;
 }
 
-// ─── Edge drawing ─────────────────────────────────────────────────────────────
-function redrawEdge(edge) {
-  const p1 = portPos(edge.from, edge.fromPort);
-  const p2 = portPos(edge.to,   edge.toPort);
-  const d = straightPath(p1.x,p1.y,p2.x,p2.y,edge.fromPort,edge.toPort);
-  edge.pathEl.setAttribute('d', d);
-  if (edge.hitEl) edge.hitEl.setAttribute('d', d);
-
-  if (edge.label) {
-    const mx=(p1.x+p2.x)/2, my=(p1.y+p2.y)/2;
-    edge.labelEl.textContent=edge.label;
-    edge.labelEl.style.display='';
-    edge.labelEl.style.left=mx+'px';
-    edge.labelEl.style.top=my+'px';
-  } else {
-    edge.labelEl.style.display='none';
-  }
+// ── Edge drawing ───────────────────────────────────────────────────────────────
+function redrawEdge(edge){
+  const p1=portPos(edge.from,edge.fromPort),p2=portPos(edge.to,edge.toPort);
+  const d=straightPath(p1.x,p1.y,p2.x,p2.y,edge.fromPort,edge.toPort);
+  edge.pathEl.setAttribute('d',d);
+  if(edge.hitEl)edge.hitEl.setAttribute('d',d);
+  if(edge.label){
+    const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2;
+    edge.labelEl.textContent=edge.label;edge.labelEl.style.display='';
+    edge.labelEl.style.left=mx+'px';edge.labelEl.style.top=my+'px';
+  }else edge.labelEl.style.display='none';
 }
-function redrawEdges() { edges.forEach(redrawEdge); }
+function redrawEdges(){edges.forEach(redrawEdge);}
 
-// ─── Edge click → select + label ─────────────────────────────────────────────
-function onEdgeClick(e) {
+function onEdgeClick(e){
   e.stopPropagation();
-  const edge = edges.find(ed=>ed.id===e.currentTarget.dataset.edgeId);
-  if (!edge) return;
-
-  // Toggle selection on this edge
-  deselectAll();
-  selectedEdges.add(edge.id);
-  highlightEdge(edge.id, true);
-
-  // Double-click to label (single click just selects)
-  if (e.detail === 2) {
-    const inp = document.getElementById('edge-label-input');
-    inp.value = edge.label;
-    inp.style.display='block';
-    inp.style.left=(e.clientX-40)+'px';
-    inp.style.top=(e.clientY-20)+'px';
-    inp.focus(); inp.select();
-    inp.onkeydown = ev => {
-      if (ev.key==='Enter') { edge.label=inp.value.trim(); inp.style.display='none'; redrawEdge(edge); }
-      if (ev.key==='Escape') inp.style.display='none';
+  const edge=edges.find(ed=>ed.id===e.currentTarget.dataset.edgeId);if(!edge)return;
+  deselectAll();selectedEdges.add(edge.id);highlightEdge(edge.id,true);
+  if(e.detail===2){
+    const inp=document.getElementById('edge-label-input');
+    inp.value=edge.label;inp.style.display='block';
+    inp.style.left=(e.clientX-40)+'px';inp.style.top=(e.clientY-20)+'px';
+    inp.focus();inp.select();
+    inp.onkeydown=ev=>{
+      if(ev.key==='Enter'){edge.label=inp.value.trim();inp.style.display='none';redrawEdge(edge);}
+      if(ev.key==='Escape')inp.style.display='none';
     };
-    inp.onblur = () => { edge.label=inp.value.trim(); inp.style.display='none'; redrawEdge(edge); };
+    inp.onblur=()=>{edge.label=inp.value.trim();inp.style.display='none';redrawEdge(edge);};
   }
 }
 
-// ─── Keyboard ─────────────────────────────────────────────────────────────────
-document.addEventListener('keydown', e => {
-  if (e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA') return;
-  if (e.key==='v'||e.key==='V') setMode('select');
-  if (e.key==='c'||e.key==='C') setMode('connect');
-  if (e.key==='s'||e.key==='S') addNode('step');
-  if (e.key==='d'||e.key==='D') addNode('decision');
-  if (e.key==='t'||e.key==='T') addNode('terminal');
-  if (e.key==='a'||e.key==='A') addNode('action');
-  if (e.key==='Delete'||e.key==='Backspace') deleteSelected();
-  if (e.key==='Escape') { cancelConn(); cancelFreehand(); deselectAll(); }
+// ── Keyboard ───────────────────────────────────────────────────────────────────
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
+  if(editingNodeId)return;
+  if(e.key==='v'||e.key==='V')setMode('select');
+  if(e.key==='c'||e.key==='C')setMode('connect');
+  if(e.key==='s'||e.key==='S')addNode('step');
+  if(e.key==='d'||e.key==='D')addNode('decision');
+  if(e.key==='t'||e.key==='T')addNode('terminal');
+  if(e.key==='a'||e.key==='A')addNode('action');
+  if(e.key==='Delete'||e.key==='Backspace')deleteSelected();
+  if(e.key==='Escape'){cancelConn();cancelFreehand();deselectAll();}
 });
 
-function deleteSelected() {
-  if (!selected.size && !selectedEdges.size) return;
-
-  // Delete selected edges first
-  selectedEdges.forEach(eid => {
-    const idx = edges.findIndex(e => e.id === eid);
-    if (idx !== -1) {
-      edges[idx].pathEl.remove();
-      edges[idx].hitEl?.remove();
-      edges[idx].labelEl.remove();
-      edges.splice(idx, 1);
-    }
+function deleteSelected(){
+  if(!selected.size&&!selectedEdges.size)return;
+  selectedEdges.forEach(eid=>{
+    const idx=edges.findIndex(e=>e.id===eid);
+    if(idx!==-1){edges[idx].pathEl.remove();edges[idx].hitEl?.remove();edges[idx].labelEl.remove();edges.splice(idx,1);}
   });
   selectedEdges.clear();
-
-  // Delete selected nodes (and their connected edges)
-  selected.forEach(id => {
-    edges = edges.filter(edge => {
-      if (edge.from===id||edge.to===id) { edge.pathEl.remove(); edge.hitEl?.remove(); edge.labelEl.remove(); return false; }
+  selected.forEach(id=>{
+    edges=edges.filter(edge=>{
+      if(edge.from===id||edge.to===id){edge.pathEl.remove();edge.hitEl?.remove();edge.labelEl.remove();return false;}
       return true;
     });
-    nodes[id]?.g.remove();
-    delete nodes[id];
+    nodes[id]?.g.remove();delete nodes[id];
   });
-  selected.clear();
-  updateStatus();
+  selected.clear();updateStatus();
 }
 
-function updateStatus() {
+function updateStatus(){
   document.getElementById('st-nodes').textContent=Object.keys(nodes).length;
   document.getElementById('st-edges').textContent=edges.length;
 }
 
-// ─── Clear ────────────────────────────────────────────────────────────────────
-function clearCanvas() {
-  if (Object.keys(nodes).length>0&&!confirm('Clear canvas?')) return;
+// ── Clear ──────────────────────────────────────────────────────────────────────
+function clearCanvas(){
+  if(Object.keys(nodes).length>0&&!confirm('Clear canvas?'))return;
   Object.values(nodes).forEach(n=>n.g.remove());
-  nodes={}; selected.clear();
+  nodes={};selected.clear();editingNodeId=null;
   edges.forEach(e=>{e.pathEl.remove();e.hitEl?.remove();e.labelEl.remove();});
-  edges=[]; nodeCounter=0; edgeCounter=0;
-  updateStatus();
+  edges=[];nodeCounter=0;edgeCounter=0;updateStatus();
 }
 
-// ─── Mermaid ──────────────────────────────────────────────────────────────────
-function mermaidCode() {
-  const lines=['flowchart TD'];
-  Object.values(nodes).forEach(n=>{
-    const lbl=n.label.replace(/"/g,"'");
-    const s={step:`["${lbl}"]`,decision:`{"${lbl}"}`,terminal:`(["${lbl}"])`,action:`["${lbl}"]`};
-    lines.push(`  ${n.id}${s[n.shape]||`["${lbl}"]`}`);
-  });
-  edges.forEach(e=>lines.push(`  ${e.from} ${e.label?`-- ${e.label} -->`:'-->'} ${e.to}`));
-  return lines.join('\n');
-}
-function copyMermaidDirect() {
-  if (!Object.keys(nodes).length) { showToast('Add some nodes first.','warn'); return; }
-  const code=mermaidCode();
-  navigator.clipboard.writeText(code).then(()=>showToast('Mermaid copied!','ok')).catch(()=>{
-    const ta=document.createElement('textarea');
-    ta.value=code; ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta);
-    ta.select(); document.execCommand('copy'); document.body.removeChild(ta);
-    showToast('Mermaid copied!','ok');
-  });
-}
-
-// ─── Export SVG ───────────────────────────────────────────────────────────────
-function exportSVG() {
-  if (!Object.keys(nodes).length) { showToast('Add nodes first.','warn'); return; }
+// ── Export SVG ─────────────────────────────────────────────────────────────────
+function exportSVG(){
+  if(!Object.keys(nodes).length){showToast('Add nodes first.','warn');return false;}
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   Object.values(nodes).forEach(n=>{
-    minX=Math.min(minX,n.x); minY=Math.min(minY,n.y);
-    maxX=Math.max(maxX,n.x+n.w); maxY=Math.max(maxY,n.y+n.h);
+    minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);
+    maxX=Math.max(maxX,n.x+n.w);maxY=Math.max(maxY,n.y+n.h);
   });
-  const pad=40; minX-=pad;minY-=pad;maxX+=pad;maxY+=pad;
+  const pad=40;minX-=pad;minY-=pad;maxX+=pad;maxY+=pad;
   const W=maxX-minX,H=maxY-minY;
-  const clone = mainSvg.cloneNode(true);
-  clone.setAttribute('width',W); clone.setAttribute('height',H);
+  const clone=mainSvg.cloneNode(true);
+  clone.setAttribute('width',W);clone.setAttribute('height',H);
   clone.setAttribute('viewBox',`${minX} ${minY} ${W} ${H}`);
-  // Remove preview/freehand/port dots
-  clone.querySelectorAll('#preview-line,#freehand-path,.port').forEach(el=>el.remove());
-  // Remove inline styles that hide things
+  // Inline CSS for node labels so they render outside this page
+  const styleEl=document.createElementNS(SVG_NS,'style');
+  styleEl.textContent='.node-label{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:Inter,system-ui,sans-serif;color:#1B2B4B;line-height:1.35;word-break:break-word;overflow-wrap:break-word;text-align:center;padding:6px 8px;white-space:pre-wrap;}';
+  clone.insertBefore(styleEl,clone.firstChild);
+  clone.querySelectorAll('#preview-line,#freehand-path,.port,.resize-handle').forEach(el=>el.remove());
   clone.querySelectorAll('[style]').forEach(el=>el.removeAttribute('style'));
   const blob=new Blob(['<?xml version="1.0"?>',clone.outerHTML],{type:'image/svg+xml'});
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a'); a.href=url; a.download='flowchart.svg'; a.click();
+  const a=document.createElement('a');a.href=url;a.download='flowchart.svg';a.click();
   URL.revokeObjectURL(url);
+  return true;
 }
 
-// ─── Save to Notion (downloads SVG + opens Notion) ───────────────────────────
+// ── Save to Notion ─────────────────────────────────────────────────────────────
 const NOTION_DB_URL='https://app.notion.com/p/73b895456021436981e354dfa3916bef';
-function saveToNotion() {
-  if (!Object.keys(nodes).length) { showToast('Add nodes first.','warn'); return; }
-  exportSVG();
-  setTimeout(()=>window.open(NOTION_DB_URL,'_blank'), 400);
+function saveToNotion(){
+  if(!exportSVG())return;
+  setTimeout(()=>window.open(NOTION_DB_URL,'_blank'),400);
 }
 
-// ─── Toast ────────────────────────────────────────────────────────────────────
-function showToast(msg,type) {
+// ── Toast ──────────────────────────────────────────────────────────────────────
+function showToast(msg,type){
   let t=document.getElementById('toast');
-  if (!t) { t=document.createElement('div'); t.id='toast'; t.style.cssText='position:fixed;bottom:48px;left:50%;transform:translateX(-50%);padding:8px 18px;border-radius:8px;font-size:13px;font-family:inherit;z-index:9999;transition:opacity 0.3s;pointer-events:none;'; document.body.appendChild(t); }
-  t.textContent=msg; t.style.background=type==='ok'?'#1B2B4B':'#E8503A'; t.style.color='#fff'; t.style.opacity='1';
-  clearTimeout(t._h); t._h=setTimeout(()=>t.style.opacity='0',2200);
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:48px;left:50%;transform:translateX(-50%);padding:8px 18px;border-radius:8px;font-size:13px;font-family:inherit;z-index:9999;transition:opacity 0.3s;pointer-events:none;';document.body.appendChild(t);}
+  t.textContent=msg;t.style.background=type==='ok'?'#1B2B4B':'#E8503A';t.style.color='#fff';t.style.opacity='1';
+  clearTimeout(t._h);t._h=setTimeout(()=>t.style.opacity='0',2200);
 }
 
-// ─── Sample ───────────────────────────────────────────────────────────────────
-function loadSample() {
+// ── Sample ─────────────────────────────────────────────────────────────────────
+function loadSample(){
   clearCanvas();
-  const cx = wrap.offsetWidth/2;
-  const g  = 120;
-
-  const s  = addNode('terminal', cx-70,  60,       'Invoice Received');
-  const q1 = addNode('decision', cx-60,  60+g,     'Is it imported?');
-  const im = addNode('step',    cx-230,  60+g*2,   'Check import log');
-  const ma = addNode('step',    cx+60,   60+g*2,   'Tag & notify vendor');
-  const q2 = addNode('decision', cx-60,  60+g*3,   'Amount > $500?');
-  const rv = addNode('step',    cx-230,  60+g*4,   'Flag for review');
-  const ok = addNode('terminal', cx+60,  60+g*4,   'Approve Invoice');
-
+  const cx=wrap.offsetWidth/2,g=120;
+  const s =addNode('terminal',cx-70, 60,      'Invoice Received');
+  const q1=addNode('decision',cx-70, 60+g,    'Is it imported?');
+  const im=addNode('step',   cx-240, 60+g*2,  'Check import log');
+  const ma=addNode('step',   cx+60,  60+g*2,  'Tag & notify vendor');
+  const q2=addNode('decision',cx-70, 60+g*3,  'Amount > $500?');
+  const rv=addNode('step',   cx-240, 60+g*4,  'Flag for review');
+  const ok=addNode('terminal',cx+60, 60+g*4,  'Approve Invoice');
   setTimeout(()=>{
-    function link(a,ap,b,bp,lbl) {
-      conn={fromId:a,fromPort:ap}; finishConn(b,bp); conn=null;
-      if (lbl) { edges[edges.length-1].label=lbl; redrawEdge(edges[edges.length-1]); }
+    function link(a,ap,b,bp,lbl){
+      conn={fromId:a,fromPort:ap};finishConn(b,bp);conn=null;
+      if(lbl){edges[edges.length-1].label=lbl;redrawEdge(edges[edges.length-1]);}
     }
-    link(s,'s', q1,'n');
-    link(q1,'w', im,'n','Yes');
-    link(q1,'e', ma,'n','No');
-    link(im,'s', q2,'n');
-    link(ma,'s', q2,'e');
-    link(q2,'w', rv,'n','>$500');
-    link(q2,'e', ok,'n','≤$500');
+    link(s,'s',q1,'n');link(q1,'w',im,'n','Yes');link(q1,'e',ma,'n','No');
+    link(im,'s',q2,'n');link(ma,'s',q2,'e');
+    link(q2,'w',rv,'n','>$500');link(q2,'e',ok,'n','<=500');
     updateStatus();
   },50);
 }
