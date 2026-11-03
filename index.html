@@ -70,22 +70,6 @@
     overflow: visible;
   }
 
-  /* Node label rendered via foreignObject */
-  .node-label {
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 12px; font-family: 'Inter', system-ui, sans-serif;
-    color: #1B2B4B; line-height: 1.35;
-    word-break: break-word; overflow-wrap: break-word;
-    text-align: center; padding: 6px 8px;
-    user-select: none; pointer-events: none;
-    white-space: pre-wrap;
-  }
-  .node-label.editing {
-    outline: none; pointer-events: auto;
-    cursor: text; user-select: text;
-  }
-
   #selbox {
     display: none; position: absolute;
     border: 1.5px dashed #E8503A;
@@ -108,6 +92,17 @@
     font-family: inherit; outline: none; min-width: 80px;
   }
 
+  /* Floating textarea for inline node label editing */
+  #node-edit-ta {
+    display: none; position: absolute; z-index: 200;
+    background: rgba(255,255,255,0.97);
+    border: 2px solid #E8503A; border-radius: 6px;
+    padding: 4px 8px; font-size: 12px; font-family: 'Inter', system-ui, sans-serif;
+    color: #1B2B4B; line-height: 1.4; resize: none; outline: none;
+    text-align: center; overflow: hidden;
+    min-width: 60px; min-height: 28px;
+  }
+
   #statusbar {
     background: #1B2B4B; color: rgba(255,255,255,0.6);
     font-size: 11px; padding: 4px 16px;
@@ -115,12 +110,7 @@
   }
   #statusbar span b { color: #fff; }
 
-  /* Resize handle shown on hover/selection */
-  .resize-handle {
-    cursor: se-resize;
-    fill: #9CA3AF; opacity: 0;
-    transition: opacity 0.15s;
-  }
+  .resize-handle { cursor: se-resize; fill: #9CA3AF; opacity: 0; transition: opacity 0.15s; }
   .node-g:hover .resize-handle,
   .node-g.selected .resize-handle { opacity: 1; }
 </style>
@@ -167,6 +157,7 @@
 
 <div id="canvas-wrap">
   <div id="selbox"></div>
+  <textarea id="node-edit-ta" rows="3"></textarea>
   <svg id="main-svg" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
@@ -194,25 +185,20 @@
   <span>Nodes: <b id="st-nodes">0</b></span>
   <span>Connections: <b id="st-edges">0</b></span>
   <span>Mode: <b id="st-mode">Select</b></span>
-  <span style="margin-left:auto;opacity:0.5">Double-click to edit label &middot; Drag corner to resize &middot; Click edge to select &middot; Del to delete</span>
+  <span style="margin-left:auto;opacity:0.5">Double-click to edit &middot; Drag corner to resize &middot; Click edge to select &middot; Del to delete</span>
 </div>
 
 <input id="edge-label-input" type="text" placeholder="Label (Enter to save, Esc to cancel)">
 
 <script>
-// ── Constants ──────────────────────────────────────────────────────────────────
-const NODE_W  = 140;
-const NODE_H  = 48;
-const TERM_H  = 40;
-const DIAM_W  = 140;
-const DIAM_H  = 80;
-const SETBACK = 9;
-const CORNER_R = 16;
+// ── Constants ───────────────────────────────────────────────────────────────
+const NODE_W=140, NODE_H=48, TERM_H=40, DIAM_W=140, DIAM_H=80;
+const SETBACK=9, CORNER_R=16;
+const FONT_SIZE=12, LINE_H=16, PAD_X=10, PAD_Y=8;
+const MIN_W={step:80,action:80,terminal:80,decision:100};
+const MIN_H={step:36,action:36,terminal:32,decision:60};
 
-const MIN_W = { step:80, action:80, terminal:80, decision:100 };
-const MIN_H = { step:36, action:36, terminal:32, decision:60  };
-
-// ── State ──────────────────────────────────────────────────────────────────────
+// ── State ────────────────────────────────────────────────────────────────────
 let nodes={}, edges=[];
 let selected=new Set(), selectedEdges=new Set();
 let nodeCounter=0, edgeCounter=0;
@@ -220,15 +206,16 @@ let mode='select';
 let drag=null, resize=null, conn=null, snapPort=null, selBox=null, freehand=null;
 let editingNodeId=null;
 
-const wrap      = document.getElementById('canvas-wrap');
-const mainSvg   = document.getElementById('main-svg');
-const edgesG    = document.getElementById('edges-g');
-const nodesG    = document.getElementById('nodes-g');
-const previewLn = document.getElementById('preview-line');
-const freehandP = document.getElementById('freehand-path');
-const selBoxEl  = document.getElementById('selbox');
+const wrap=document.getElementById('canvas-wrap');
+const mainSvg=document.getElementById('main-svg');
+const edgesG=document.getElementById('edges-g');
+const nodesG=document.getElementById('nodes-g');
+const previewLn=document.getElementById('preview-line');
+const freehandP=document.getElementById('freehand-path');
+const selBoxEl=document.getElementById('selbox');
+const nodeEditTa=document.getElementById('node-edit-ta');
 
-// ── SVG helpers ────────────────────────────────────────────────────────────────
+// ── SVG helpers ──────────────────────────────────────────────────────────────
 const SVG_NS='http://www.w3.org/2000/svg';
 function svgEl(tag,attrs={}){
   const el=document.createElementNS(SVG_NS,tag);
@@ -236,6 +223,58 @@ function svgEl(tag,attrs={}){
   return el;
 }
 
+// ── Text measurement via hidden canvas ──────────────────────────────────────
+const _mc=document.createElement('canvas').getContext('2d');
+_mc.font=`${FONT_SIZE}px Inter,system-ui,sans-serif`;
+function measureText(str){ return _mc.measureText(str).width; }
+
+// Word-wrap text into lines that fit maxW pixels
+function wrapText(text, maxW){
+  const words=text.split(' ');
+  const lines=[];
+  let cur='';
+  for(const w of words){
+    const test=cur?cur+' '+w:w;
+    if(measureText(test)<=maxW){ cur=test; }
+    else{ if(cur)lines.push(cur); cur=w; }
+  }
+  if(cur)lines.push(cur);
+  return lines.length?lines:[''];
+}
+
+// Build SVG <text> with <tspan> lines, centered in box (w×h)
+function buildTextEl(label, w, h){
+  const innerW=w-PAD_X*2;
+  // For decision nodes, text area is smaller (diamond inset)
+  const lines=wrapText(label, innerW);
+  const totalH=lines.length*LINE_H;
+  const startY=h/2 - totalH/2 + LINE_H*0.8; // baseline of first line
+
+  const textEl=svgEl('text',{
+    x:w/2, y:startY,
+    'text-anchor':'middle',
+    'font-size':FONT_SIZE,
+    'font-family':'Inter,system-ui,sans-serif',
+    fill:'#1B2B4B',
+    'pointer-events':'none'
+  });
+  lines.forEach((line,i)=>{
+    const ts=svgEl('tspan',{x:w/2, dy: i===0?'0':'1.35em'});
+    ts.textContent=line;
+    textEl.appendChild(ts);
+  });
+  return textEl;
+}
+
+// Rebuild text element in place (after label/size change)
+function refreshTextEl(id){
+  const n=nodes[id];if(!n)return;
+  if(n.textEl)n.textEl.remove();
+  n.textEl=buildTextEl(n.label, n.w, n.h);
+  n.g.insertBefore(n.textEl, n.portEls['n']); // insert before ports so ports stay on top
+}
+
+// ── Coordinates ──────────────────────────────────────────────────────────────
 function c2w(cx,cy){const r=wrap.getBoundingClientRect();return{x:cx-r.left,y:cy-r.top};}
 
 function portOffset(node,port){
@@ -252,7 +291,7 @@ function setback(x1,y1,x2,y2,amt){
   return{x:x2-dx/len*amt,y:y2-dy/len*amt};
 }
 
-// Rounded orthogonal path
+// ── Rounded orthogonal path ───────────────────────────────────────────────────
 function straightPath(x1,y1,x2,y2,fp,tp){
   const fv=fp==='n'||fp==='s', tv=tp==='n'||tp==='s';
   let pts;
@@ -285,7 +324,7 @@ function straightPath(x1,y1,x2,y2,fp,tp){
   return d;
 }
 
-// ── Mode ───────────────────────────────────────────────────────────────────────
+// ── Mode ─────────────────────────────────────────────────────────────────────
 function setMode(m){
   mode=m;
   document.getElementById('btn-select').classList.toggle('active',m==='select');
@@ -295,7 +334,7 @@ function setMode(m){
   if(m==='select'){cancelConn();cancelFreehand();}
 }
 
-// ── Selection ──────────────────────────────────────────────────────────────────
+// ── Selection ─────────────────────────────────────────────────────────────────
 function selectNode(id,additive=false){
   if(!additive)deselectAll();
   if(id){selected.add(id);highlightNode(id,true);nodes[id]?.g.classList.add('selected');}
@@ -320,25 +359,25 @@ function highlightNode(id,on){
 function shapeStroke(s){return{step:'#D1D5DB',decision:'#FCD34D',terminal:'#86EFAC',action:'#93C5FD'}[s]||'#D1D5DB';}
 function shapeFill(s){return{step:'#ffffff',decision:'#FFFBEB',terminal:'#F0FDF4',action:'#EFF6FF'}[s]||'#fff';}
 
-// ── Update node geometry after resize ─────────────────────────────────────────
+// ── Update node geometry (resize) ─────────────────────────────────────────────
 function updateNodeGeometry(id){
   const n=nodes[id];if(!n)return;
-  const{shape,w,h,bodyEl,foEl,portEls,resizeEl}=n;
+  const{shape,w,h,bodyEl,portEls,resizeEl}=n;
   if(shape==='decision'){
     bodyEl.setAttribute('points',`${w/2},0 ${w},${h/2} ${w/2},${h} 0,${h/2}`);
   }else{
     bodyEl.setAttribute('width',w);bodyEl.setAttribute('height',h);
     if(shape==='terminal')bodyEl.setAttribute('rx',h/2);
   }
-  foEl.setAttribute('width',w);foEl.setAttribute('height',h);
   ['n','s','e','w'].forEach(p=>{
     const o=portOffset(n,p);
     portEls[p].setAttribute('cx',o.x);portEls[p].setAttribute('cy',o.y);
   });
   if(resizeEl){resizeEl.setAttribute('x',w-10);resizeEl.setAttribute('y',h-10);}
+  refreshTextEl(id);
 }
 
-// ── Add node ───────────────────────────────────────────────────────────────────
+// ── Add node ──────────────────────────────────────────────────────────────────
 function nodeDims(shape){
   if(shape==='decision')return{w:DIAM_W,h:DIAM_H};
   if(shape==='terminal')return{w:NODE_W,h:TERM_H};
@@ -367,13 +406,9 @@ function addNode(shape,x,y,label){
   }
   g.appendChild(bodyEl);
 
-  // ForeignObject for word-wrapping text
-  const foEl=svgEl('foreignObject',{x:0,y:0,width:w,height:h});
-  const labelDiv=document.createElement('div');
-  labelDiv.className='node-label';
-  labelDiv.textContent=label;
-  foEl.appendChild(labelDiv);
-  g.appendChild(foEl);
+  // SVG text with tspan wrapping
+  const textEl=buildTextEl(label,w,h);
+  g.appendChild(textEl);
 
   // Port dots
   const portEls={};
@@ -383,11 +418,10 @@ function addNode(shape,x,y,label){
     g.appendChild(dot);portEls[p]=dot;
   });
 
-  // Resize handle (bottom-right corner)
+  // Resize handle
   const resizeEl=svgEl('rect',{x:w-10,y:h-10,width:10,height:10,rx:2,class:'resize-handle','data-node':id});
   g.appendChild(resizeEl);
 
-  // Events
   g.addEventListener('mousedown',onNodeMousedown);
   g.addEventListener('dblclick',onNodeDblclick);
   g.addEventListener('mouseenter',()=>{if(mode==='connect')Object.values(portEls).forEach(d=>d.style.display='');});
@@ -407,6 +441,7 @@ function addNode(shape,x,y,label){
   resizeEl.addEventListener('mousedown',e=>{
     if(mode!=='select')return;
     e.stopPropagation();e.preventDefault();
+    closeNodeEdit();
     const pt=c2w(e.clientX,e.clientY);
     const n=nodes[id];
     resize={nodeId:id,startW:n.w,startH:n.h,startPt:pt};
@@ -414,20 +449,66 @@ function addNode(shape,x,y,label){
 
   g.setAttribute('transform',`translate(${x},${y})`);
   nodesG.appendChild(g);
-  nodes[id]={id,shape,x,y,w,h,label,g,bodyEl,foEl,labelDiv,portEls,resizeEl};
+  nodes[id]={id,shape,x,y,w,h,label,g,bodyEl,textEl,portEls,resizeEl};
   updateStatus();
   return id;
 }
 
-// ── Node interactions ──────────────────────────────────────────────────────────
+// ── Inline node label editing (textarea overlay) ──────────────────────────────
+function openNodeEdit(id){
+  if(editingNodeId===id)return;
+  closeNodeEdit();
+  editingNodeId=id;
+  const n=nodes[id];
+  // Position textarea over the node
+  const wrapR=wrap.getBoundingClientRect();
+  nodeEditTa.style.display='block';
+  nodeEditTa.style.left=(n.x+PAD_X)+'px';
+  nodeEditTa.style.top=(n.y+PAD_Y)+'px';
+  nodeEditTa.style.width=(n.w-PAD_X*2)+'px';
+  nodeEditTa.style.height=(n.h-PAD_Y*2)+'px';
+  nodeEditTa.value=n.label;
+  nodeEditTa.focus();nodeEditTa.select();
+  // Hide SVG text while editing
+  if(n.textEl)n.textEl.style.display='none';
+}
+
+function closeNodeEdit(){
+  if(!editingNodeId)return;
+  const n=nodes[editingNodeId];
+  if(n){
+    const newLabel=nodeEditTa.value.trim()||n.label;
+    n.label=newLabel;
+    if(n.textEl)n.textEl.style.display='';
+    refreshTextEl(editingNodeId);
+    redrawEdges();
+  }
+  nodeEditTa.style.display='none';
+  nodeEditTa.value='';
+  editingNodeId=null;
+}
+
+nodeEditTa.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();closeNodeEdit();}
+  if(e.key==='Escape'){
+    // Restore original label
+    const n=nodes[editingNodeId];
+    if(n&&n.textEl)n.textEl.style.display='';
+    nodeEditTa.style.display='none';nodeEditTa.value='';
+    editingNodeId=null;
+  }
+  e.stopPropagation();
+});
+nodeEditTa.addEventListener('blur',()=>closeNodeEdit());
+
+// ── Node interactions ─────────────────────────────────────────────────────────
 function onNodeMousedown(e){
   if(e.target.classList.contains('port'))return;
   if(e.target.classList.contains('resize-handle'))return;
-  if(e.target.classList.contains('node-label')&&e.target.classList.contains('editing'))return;
   if(mode!=='select')return;
   e.stopPropagation();
+  closeNodeEdit();
   const id=e.currentTarget.dataset.id;
-  if(editingNodeId&&editingNodeId!==id)commitEdit(editingNodeId);
   if(e.shiftKey){
     if(selected.has(id)){selected.delete(id);highlightNode(id,false);nodes[id]?.g.classList.remove('selected');}
     else selectNode(id,true);
@@ -445,44 +526,13 @@ function onNodeDblclick(e){
   if(e.target.classList.contains('resize-handle'))return;
   e.stopPropagation();
   if(mode!=='select')return;
-  startInlineEdit(e.currentTarget.dataset.id);
+  openNodeEdit(e.currentTarget.dataset.id);
 }
 
-function startInlineEdit(id){
-  if(editingNodeId===id)return;
-  if(editingNodeId)commitEdit(editingNodeId);
-  const n=nodes[id];
-  editingNodeId=id;
-  n.labelDiv.classList.add('editing');
-  n.labelDiv.contentEditable='true';
-  n.g.style.cursor='text';
-  const range=document.createRange();
-  range.selectNodeContents(n.labelDiv);
-  const sel=window.getSelection();sel.removeAllRanges();sel.addRange(range);
-  n.labelDiv.focus();
-  n.labelDiv.addEventListener('keydown',onLabelKeydown);
-  n.labelDiv.addEventListener('blur',()=>commitEdit(id),{once:true});
-}
-
-function onLabelKeydown(e){
-  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();if(editingNodeId)commitEdit(editingNodeId);}
-  if(e.key==='Escape'){const n=nodes[editingNodeId];if(n){n.labelDiv.textContent=n.label;commitEdit(editingNodeId);}}
-  e.stopPropagation();
-}
-
-function commitEdit(id){
-  const n=nodes[id];if(!n){editingNodeId=null;return;}
-  const newLabel=n.labelDiv.textContent.trim()||n.label;
-  n.label=newLabel;n.labelDiv.textContent=newLabel;
-  n.labelDiv.classList.remove('editing');n.labelDiv.contentEditable='false';
-  n.g.style.cursor='grab';
-  n.labelDiv.removeEventListener('keydown',onLabelKeydown);
-  editingNodeId=null;redrawEdges();
-}
-
-// ── Canvas events ──────────────────────────────────────────────────────────────
+// ── Canvas events ─────────────────────────────────────────────────────────────
 wrap.addEventListener('mousedown',e=>{
-  if(editingNodeId)commitEdit(editingNodeId);
+  if(e.target===nodeEditTa)return;
+  closeNodeEdit();
   const isBackground=e.target===wrap||e.target===mainSvg||e.target===edgesG||e.target===nodesG||e.target===selBoxEl;
   if(!isBackground)return;
   const pt=c2w(e.clientX,e.clientY);
@@ -579,7 +629,7 @@ document.addEventListener('mouseup',e=>{
   }
 });
 
-// ── Connection helpers ─────────────────────────────────────────────────────────
+// ── Connection helpers ────────────────────────────────────────────────────────
 function finishConn(toId,toPort){
   if(!conn)return;
   const dup=edges.find(e=>e.from===conn.fromId&&e.fromPort===conn.fromPort&&e.to===toId&&e.toPort===toPort);
@@ -615,13 +665,13 @@ function finishFreehand(pts,endPt){
     }
   });
   if(!fromNode||!toNode||fromNode===toNode)return;
-  const fromPort=bestPortForDir(fromNode,endPt.x-startPt.x,endPt.y-startPt.y);
-  const toPort=bestPortForDir(toNode,startPt.x-endPt.x,startPt.y-endPt.y);
+  const fromPort=bestPortForDir(endPt.x-startPt.x,endPt.y-startPt.y);
+  const toPort=bestPortForDir(startPt.x-endPt.x,startPt.y-endPt.y);
   if(edges.find(e=>e.from===fromNode&&e.to===toNode))return;
   conn={fromId:fromNode,fromPort};finishConn(toNode,toPort);conn=null;
 }
 
-function bestPortForDir(nodeId,dx,dy){
+function bestPortForDir(dx,dy){
   if(Math.abs(dx)>Math.abs(dy))return dx>0?'e':'w';
   return dy>0?'s':'n';
 }
@@ -647,7 +697,7 @@ function clearSnapHighlight(){
   });
 }
 
-// ── Edge-in-box hit test ───────────────────────────────────────────────────────
+// ── Edge-in-box hit test ──────────────────────────────────────────────────────
 function edgeInBox(edge,rx,ry,rw,rh){
   const p1=portPos(edge.from,edge.fromPort),p2=portPos(edge.to,edge.toPort);
   const fv=edge.fromPort==='n'||edge.fromPort==='s',tv=edge.toPort==='n'||edge.toPort==='s';
@@ -666,7 +716,7 @@ function edgeInBox(edge,rx,ry,rw,rh){
   return false;
 }
 
-// ── Edge drawing ───────────────────────────────────────────────────────────────
+// ── Edge drawing ──────────────────────────────────────────────────────────────
 function redrawEdge(edge){
   const p1=portPos(edge.from,edge.fromPort),p2=portPos(edge.to,edge.toPort);
   const d=straightPath(p1.x,p1.y,p2.x,p2.y,edge.fromPort,edge.toPort);
@@ -697,10 +747,9 @@ function onEdgeClick(e){
   }
 }
 
-// ── Keyboard ───────────────────────────────────────────────────────────────────
+// ── Keyboard ──────────────────────────────────────────────────────────────────
 document.addEventListener('keydown',e=>{
   if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
-  if(editingNodeId)return;
   if(e.key==='v'||e.key==='V')setMode('select');
   if(e.key==='c'||e.key==='C')setMode('connect');
   if(e.key==='s'||e.key==='S')addNode('step');
@@ -733,18 +782,21 @@ function updateStatus(){
   document.getElementById('st-edges').textContent=edges.length;
 }
 
-// ── Clear ──────────────────────────────────────────────────────────────────────
+// ── Clear ─────────────────────────────────────────────────────────────────────
 function clearCanvas(){
   if(Object.keys(nodes).length>0&&!confirm('Clear canvas?'))return;
+  closeNodeEdit();
   Object.values(nodes).forEach(n=>n.g.remove());
-  nodes={};selected.clear();editingNodeId=null;
+  nodes={};selected.clear();
   edges.forEach(e=>{e.pathEl.remove();e.hitEl?.remove();e.labelEl.remove();});
   edges=[];nodeCounter=0;edgeCounter=0;updateStatus();
 }
 
-// ── Export SVG ─────────────────────────────────────────────────────────────────
+// ── Export SVG ────────────────────────────────────────────────────────────────
+// Uses pure SVG <text>/<tspan> so text renders in ALL SVG viewers (Notion, Figma, etc.)
 function exportSVG(){
   if(!Object.keys(nodes).length){showToast('Add nodes first.','warn');return false;}
+  closeNodeEdit();
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   Object.values(nodes).forEach(n=>{
     minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);
@@ -755,12 +807,10 @@ function exportSVG(){
   const clone=mainSvg.cloneNode(true);
   clone.setAttribute('width',W);clone.setAttribute('height',H);
   clone.setAttribute('viewBox',`${minX} ${minY} ${W} ${H}`);
-  // Inline CSS for node labels so they render outside this page
-  const styleEl=document.createElementNS(SVG_NS,'style');
-  styleEl.textContent='.node-label{width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:12px;font-family:Inter,system-ui,sans-serif;color:#1B2B4B;line-height:1.35;word-break:break-word;overflow-wrap:break-word;text-align:center;padding:6px 8px;white-space:pre-wrap;}';
-  clone.insertBefore(styleEl,clone.firstChild);
   clone.querySelectorAll('#preview-line,#freehand-path,.port,.resize-handle').forEach(el=>el.remove());
   clone.querySelectorAll('[style]').forEach(el=>el.removeAttribute('style'));
+  // Re-show any hidden text elements (in case edit was open)
+  clone.querySelectorAll('text').forEach(el=>el.removeAttribute('style'));
   const blob=new Blob(['<?xml version="1.0"?>',clone.outerHTML],{type:'image/svg+xml'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='flowchart.svg';a.click();
@@ -768,14 +818,14 @@ function exportSVG(){
   return true;
 }
 
-// ── Save to Notion ─────────────────────────────────────────────────────────────
+// ── Save to Notion ────────────────────────────────────────────────────────────
 const NOTION_DB_URL='https://app.notion.com/p/73b895456021436981e354dfa3916bef';
 function saveToNotion(){
   if(!exportSVG())return;
   setTimeout(()=>window.open(NOTION_DB_URL,'_blank'),400);
 }
 
-// ── Toast ──────────────────────────────────────────────────────────────────────
+// ── Toast ─────────────────────────────────────────────────────────────────────
 function showToast(msg,type){
   let t=document.getElementById('toast');
   if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:48px;left:50%;transform:translateX(-50%);padding:8px 18px;border-radius:8px;font-size:13px;font-family:inherit;z-index:9999;transition:opacity 0.3s;pointer-events:none;';document.body.appendChild(t);}
@@ -783,25 +833,35 @@ function showToast(msg,type){
   clearTimeout(t._h);t._h=setTimeout(()=>t.style.opacity='0',2200);
 }
 
-// ── Sample ─────────────────────────────────────────────────────────────────────
+// ── Sample ────────────────────────────────────────────────────────────────────
 function loadSample(){
   clearCanvas();
   const cx=wrap.offsetWidth/2,g=120;
-  const s =addNode('terminal',cx-70, 60,      'Invoice Received');
-  const q1=addNode('decision',cx-70, 60+g,    'Is it imported?');
-  const im=addNode('step',   cx-240, 60+g*2,  'Check import log');
-  const ma=addNode('step',   cx+60,  60+g*2,  'Tag & notify vendor');
-  const q2=addNode('decision',cx-70, 60+g*3,  'Amount > $500?');
-  const rv=addNode('step',   cx-240, 60+g*4,  'Flag for review');
-  const ok=addNode('terminal',cx+60, 60+g*4,  'Approve Invoice');
+  const s =addNode('terminal',cx-70, 60,      'Start');
+  const q1=addNode('decision',cx-70, 60+g,    'Is the requester Brian Stai?');
+  const im=addNode('action',  cx-240,60+g*2,  'Delete the invoice(s) for Brian');
+  const ma=addNode('step',    cx+60, 60+g*2,  'Ask what they want to do with the invoice');
+  const q2=addNode('decision',cx+60, 60+g*3,  'What is the requested action?');
+  const rv=addNode('action',  cx-40, 60+g*4,  'Ask the user to contact Dorothy Park to acknowledge the error');
+  const ask=addNode('step',   cx+160,60+g*4,  'Ask why the invoice needs to be deleted');
+  const tag=addNode('step',   cx+160,60+g*5,  'Tag Julian in the Slack thread');
+  const ok=addNode('terminal',cx-40, 60+g*6,  'Resolved');
+
   setTimeout(()=>{
     function link(a,ap,b,bp,lbl){
       conn={fromId:a,fromPort:ap};finishConn(b,bp);conn=null;
       if(lbl){edges[edges.length-1].label=lbl;redrawEdge(edges[edges.length-1]);}
     }
-    link(s,'s',q1,'n');link(q1,'w',im,'n','Yes');link(q1,'e',ma,'n','No');
-    link(im,'s',q2,'n');link(ma,'s',q2,'e');
-    link(q2,'w',rv,'n','>$500');link(q2,'e',ok,'n','<=500');
+    link(s,'s',q1,'n');
+    link(q1,'w',im,'n','YES');
+    link(q1,'e',ma,'n','NO');
+    link(ma,'s',q2,'n');
+    link(q2,'w',rv,'n','Clear Error Center');
+    link(q2,'e',ask,'n','Delete Actual Invoice');
+    link(ask,'s',tag,'n');
+    link(im,'s',ok,'n');
+    link(rv,'s',ok,'n');
+    link(tag,'s',ok,'e');
     updateStatus();
   },50);
 }
