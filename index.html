@@ -77,16 +77,11 @@
     pointer-events: none; z-index: 50;
   }
 
-  .edge-label {
-    position: absolute; font-size: 11px;
-    background: #fff; border: 1px solid #e0e0e0;
-    border-radius: 4px; padding: 1px 5px; color: #555;
-    pointer-events: none; transform: translate(-50%,-50%);
-    white-space: nowrap;
-  }
+  .edge-label-bg { pointer-events: none; }
+  .edge-label-text { pointer-events: none; font-size: 11px; font-family: 'Inter', system-ui, sans-serif; fill: #555; }
 
   #edge-label-input {
-    display: none; position: fixed; z-index: 500;
+    display: none; position: absolute; z-index: 500;
     background: #fff; border: 1.5px solid #E8503A;
     border-radius: 6px; padding: 4px 8px; font-size: 12px;
     font-family: inherit; outline: none; min-width: 80px;
@@ -110,9 +105,10 @@
   }
   #statusbar span b { color: #fff; }
 
-  .resize-handle { cursor: se-resize; fill: #9CA3AF; opacity: 0; transition: opacity 0.15s; }
+  .resize-handle { cursor: se-resize; fill: #6B7280; opacity: 0; transition: opacity 0.15s; }
   .node-g:hover .resize-handle,
-  .node-g.selected .resize-handle { opacity: 1; }
+  .node-g.selected .resize-handle { opacity: 0.7; }
+  .node-g:hover .resize-handle:hover { opacity: 1; fill: #E8503A; }
 </style>
 </head>
 <body>
@@ -124,7 +120,7 @@
   <button class="tb-btn" onclick="clearCanvas()">&#128465; Clear</button>
   <button class="tb-btn" onclick="loadSample()">&#128203; Sample</button>
   <div class="spacer"></div>
-  <span style="font-size:12px;opacity:0.5">Del = delete &middot; Esc = cancel</span>
+  <span style="font-size:12px;opacity:0.5">Dbl-click shape to edit &middot; Dbl-click arrow to label it &middot; Drag ▪ corner to resize &middot; Del to delete</span>
   <div class="sep"></div>
   <button class="tb-btn notion-btn" onclick="saveToNotion()">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="display:inline;vertical-align:-2px;margin-right:5px"><rect x="1" y="1" width="12" height="12" rx="2" fill="white" opacity="0.9"/><path d="M3.5 3.5h4l3 3.5-3 3.5h-4v-7z" fill="#1B2B4B" opacity="0.7"/></svg>
@@ -158,6 +154,7 @@
 <div id="canvas-wrap">
   <div id="selbox"></div>
   <textarea id="node-edit-ta" rows="3"></textarea>
+  <input id="edge-label-input" type="text" placeholder="Label…">
   <svg id="main-svg" xmlns="http://www.w3.org/2000/svg">
     <defs>
       <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto" markerUnits="strokeWidth">
@@ -188,7 +185,6 @@
   <span style="margin-left:auto;opacity:0.5">Double-click to edit &middot; Drag corner to resize &middot; Click edge to select &middot; Del to delete</span>
 </div>
 
-<input id="edge-label-input" type="text" placeholder="Label (Enter to save, Esc to cancel)">
 
 <script>
 // ── Constants ───────────────────────────────────────────────────────────────
@@ -373,7 +369,7 @@ function updateNodeGeometry(id){
     const o=portOffset(n,p);
     portEls[p].setAttribute('cx',o.x);portEls[p].setAttribute('cy',o.y);
   });
-  if(resizeEl){resizeEl.setAttribute('x',w-10);resizeEl.setAttribute('y',h-10);}
+  if(resizeEl){resizeEl.setAttribute('x',w-14);resizeEl.setAttribute('y',h-14);}
   refreshTextEl(id);
 }
 
@@ -418,8 +414,8 @@ function addNode(shape,x,y,label){
     g.appendChild(dot);portEls[p]=dot;
   });
 
-  // Resize handle
-  const resizeEl=svgEl('rect',{x:w-10,y:h-10,width:10,height:10,rx:2,class:'resize-handle','data-node':id});
+  // Resize handle (16×16, bottom-right corner)
+  const resizeEl=svgEl('rect',{x:w-14,y:h-14,width:14,height:14,rx:3,class:'resize-handle','data-node':id});
   g.appendChild(resizeEl);
 
   g.addEventListener('mousedown',onNodeMousedown);
@@ -460,46 +456,50 @@ function openNodeEdit(id){
   closeNodeEdit();
   editingNodeId=id;
   const n=nodes[id];
-  // Position textarea over the node
-  const wrapR=wrap.getBoundingClientRect();
+  // canvas-wrap is the offset parent; SVG coords == CSS px coords here
   nodeEditTa.style.display='block';
-  nodeEditTa.style.left=(n.x+PAD_X)+'px';
-  nodeEditTa.style.top=(n.y+PAD_Y)+'px';
-  nodeEditTa.style.width=(n.w-PAD_X*2)+'px';
-  nodeEditTa.style.height=(n.h-PAD_Y*2)+'px';
+  nodeEditTa.style.left= n.x + 'px';
+  nodeEditTa.style.top=  n.y + 'px';
+  nodeEditTa.style.width= n.w + 'px';
+  nodeEditTa.style.height= n.h + 'px';
+  nodeEditTa.style.padding= PAD_Y + 'px ' + PAD_X + 'px';
   nodeEditTa.value=n.label;
-  nodeEditTa.focus();nodeEditTa.select();
   // Hide SVG text while editing
   if(n.textEl)n.textEl.style.display='none';
+  // Focus after paint so blur from the dblclick doesn't immediately close it
+  requestAnimationFrame(()=>{ nodeEditTa.focus(); nodeEditTa.select(); });
 }
 
 function closeNodeEdit(){
   if(!editingNodeId)return;
-  const n=nodes[editingNodeId];
+  const id=editingNodeId;
+  editingNodeId=null;          // clear first so blur re-entry is a no-op
+  const n=nodes[id];
   if(n){
     const newLabel=nodeEditTa.value.trim()||n.label;
     n.label=newLabel;
     if(n.textEl)n.textEl.style.display='';
-    refreshTextEl(editingNodeId);
+    refreshTextEl(id);
     redrawEdges();
   }
   nodeEditTa.style.display='none';
   nodeEditTa.value='';
-  editingNodeId=null;
 }
 
 nodeEditTa.addEventListener('keydown',e=>{
   if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();closeNodeEdit();}
   if(e.key==='Escape'){
-    // Restore original label
     const n=nodes[editingNodeId];
+    editingNodeId=null;
     if(n&&n.textEl)n.textEl.style.display='';
     nodeEditTa.style.display='none';nodeEditTa.value='';
-    editingNodeId=null;
   }
   e.stopPropagation();
 });
-nodeEditTa.addEventListener('blur',()=>closeNodeEdit());
+nodeEditTa.addEventListener('blur',()=>{
+  // Small delay so a resize-handle click doesn't accidentally close editing
+  setTimeout(closeNodeEdit, 80);
+});
 
 // ── Node interactions ─────────────────────────────────────────────────────────
 function onNodeMousedown(e){
@@ -640,10 +640,14 @@ function finishConn(toId,toPort){
   hitEl.dataset.edgeId=id;hitEl.addEventListener('click',onEdgeClick);
   pathEl.dataset.edgeId=id;pathEl.addEventListener('click',onEdgeClick);
   edgesG.appendChild(pathEl);edgesG.appendChild(hitEl);
-  const labelEl=document.createElement('div');
-  labelEl.className='edge-label';labelEl.dataset.edgeId=id;labelEl.style.display='none';
-  wrap.appendChild(labelEl);
-  const edge={id,from:conn.fromId,fromPort:conn.fromPort,to:toId,toPort,label:'',pathEl,hitEl,labelEl};
+  // Edge label as native SVG (renders in Notion export)
+  const labelG=svgEl('g',{class:'edge-label-g','data-edge-id':id});
+  const labelBg=svgEl('rect',{class:'edge-label-bg',rx:3,fill:'#fff',stroke:'#e0e0e0','stroke-width':'1'});
+  const labelTx=svgEl('text',{class:'edge-label-text','text-anchor':'middle','dominant-baseline':'middle'});
+  labelG.appendChild(labelBg);labelG.appendChild(labelTx);
+  labelG.style.display='none';
+  edgesG.appendChild(labelG);
+  const edge={id,from:conn.fromId,fromPort:conn.fromPort,to:toId,toPort,label:'',pathEl,hitEl,labelG,labelBg,labelTx};
   edges.push(edge);redrawEdge(edge);updateStatus();
 }
 
@@ -724,9 +728,16 @@ function redrawEdge(edge){
   if(edge.hitEl)edge.hitEl.setAttribute('d',d);
   if(edge.label){
     const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2;
-    edge.labelEl.textContent=edge.label;edge.labelEl.style.display='';
-    edge.labelEl.style.left=mx+'px';edge.labelEl.style.top=my+'px';
-  }else edge.labelEl.style.display='none';
+    edge.labelTx.textContent=edge.label;
+    const tw=edge.label.length*6.2+10, th=16;
+    edge.labelBg.setAttribute('x',(mx-tw/2).toFixed(1));
+    edge.labelBg.setAttribute('y',(my-th/2).toFixed(1));
+    edge.labelBg.setAttribute('width',tw.toFixed(1));
+    edge.labelBg.setAttribute('height',th);
+    edge.labelTx.setAttribute('x',mx.toFixed(1));
+    edge.labelTx.setAttribute('y',my.toFixed(1));
+    edge.labelG.style.display='';
+  }else if(edge.labelG) edge.labelG.style.display='none';
 }
 function redrawEdges(){edges.forEach(redrawEdge);}
 
@@ -737,13 +748,17 @@ function onEdgeClick(e){
   if(e.detail===2){
     const inp=document.getElementById('edge-label-input');
     inp.value=edge.label;inp.style.display='block';
-    inp.style.left=(e.clientX-40)+'px';inp.style.top=(e.clientY-20)+'px';
+    // Position near click, offset from canvas top-left
+    const wr=wrap.getBoundingClientRect();
+    inp.style.left=(e.clientX-wr.left-40)+'px';inp.style.top=(e.clientY-wr.top-14)+'px';
     inp.focus();inp.select();
+    const commit=()=>{edge.label=inp.value.trim();inp.style.display='none';redrawEdge(edge);};
     inp.onkeydown=ev=>{
-      if(ev.key==='Enter'){edge.label=inp.value.trim();inp.style.display='none';redrawEdge(edge);}
+      if(ev.key==='Enter'){commit();}
       if(ev.key==='Escape')inp.style.display='none';
+      ev.stopPropagation();
     };
-    inp.onblur=()=>{edge.label=inp.value.trim();inp.style.display='none';redrawEdge(edge);};
+    inp.onblur=commit;
   }
 }
 
@@ -764,12 +779,12 @@ function deleteSelected(){
   if(!selected.size&&!selectedEdges.size)return;
   selectedEdges.forEach(eid=>{
     const idx=edges.findIndex(e=>e.id===eid);
-    if(idx!==-1){edges[idx].pathEl.remove();edges[idx].hitEl?.remove();edges[idx].labelEl.remove();edges.splice(idx,1);}
+    if(idx!==-1){edges[idx].pathEl.remove();edges[idx].hitEl?.remove();edges[idx].labelG?.remove();edges.splice(idx,1);}
   });
   selectedEdges.clear();
   selected.forEach(id=>{
     edges=edges.filter(edge=>{
-      if(edge.from===id||edge.to===id){edge.pathEl.remove();edge.hitEl?.remove();edge.labelEl.remove();return false;}
+      if(edge.from===id||edge.to===id){edge.pathEl.remove();edge.hitEl?.remove();edge.labelG?.remove();return false;}
       return true;
     });
     nodes[id]?.g.remove();delete nodes[id];
@@ -788,7 +803,7 @@ function clearCanvas(){
   closeNodeEdit();
   Object.values(nodes).forEach(n=>n.g.remove());
   nodes={};selected.clear();
-  edges.forEach(e=>{e.pathEl.remove();e.hitEl?.remove();e.labelEl.remove();});
+  edges.forEach(e=>{e.pathEl.remove();e.hitEl?.remove();e.labelG?.remove();});
   edges=[];nodeCounter=0;edgeCounter=0;updateStatus();
 }
 
@@ -807,11 +822,31 @@ function exportSVG(){
   const clone=mainSvg.cloneNode(true);
   clone.setAttribute('width',W);clone.setAttribute('height',H);
   clone.setAttribute('viewBox',`${minX} ${minY} ${W} ${H}`);
+  // Remove UI-only elements
   clone.querySelectorAll('#preview-line,#freehand-path,.port,.resize-handle').forEach(el=>el.remove());
-  clone.querySelectorAll('[style]').forEach(el=>el.removeAttribute('style'));
-  // Re-show any hidden text elements (in case edit was open)
+  // Remove invisible hit-area paths (transparent stroke)
+  clone.querySelectorAll('path[stroke="transparent"]').forEach(el=>el.remove());
+  // Remove hidden edge label groups
+  clone.querySelectorAll('.edge-label-g').forEach(el=>{
+    if(el.style.display==='none')el.remove();
+    else el.removeAttribute('style');
+  });
+  // Strip cursor styles from paths/nodes but keep display:none removed elements gone
+  clone.querySelectorAll('[style]').forEach(el=>{
+    const s=el.getAttribute('style')||'';
+    if(s.includes('display:none')){el.remove();return;}
+    el.removeAttribute('style');
+  });
+  // Make sure all text elements are visible
   clone.querySelectorAll('text').forEach(el=>el.removeAttribute('style'));
-  const blob=new Blob(['<?xml version="1.0"?>',clone.outerHTML],{type:'image/svg+xml'});
+  // Reset any selection highlights
+  clone.querySelectorAll('[stroke="#E8503A"]').forEach(el=>{
+    const id=el.closest('[data-shape]')?.dataset.shape;
+    const strokes={step:'#D1D5DB',decision:'#FCD34D',terminal:'#86EFAC',action:'#93C5FD'};
+    if(id)el.setAttribute('stroke',strokes[id]||'#D1D5DB');
+    el.setAttribute('stroke-width','1.5');
+  });
+  const blob=new Blob(['<?xml version="1.0" encoding="UTF-8"?>',clone.outerHTML],{type:'image/svg+xml'});
   const url=URL.createObjectURL(blob);
   const a=document.createElement('a');a.href=url;a.download='flowchart.svg';a.click();
   URL.revokeObjectURL(url);
