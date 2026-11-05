@@ -1591,17 +1591,24 @@ function importSVGText(svgText){
   try{
     const parser=new DOMParser();
     const doc=parser.parseFromString(svgText,'image/svg+xml');
-    const svgEl2=doc.querySelector('svg');
-    if(!svgEl2)throw new Error('No SVG element found');
 
-    // Collect nodes from <g class="node-g"> elements
-    const nodeEls=doc.querySelectorAll('g[data-id]');
-    if(!nodeEls.length){ showToast('No editable nodes found in this SVG.','warn'); return; }
+    // Check for XML parse error
+    const parseErr=doc.querySelector('parsererror');
+    if(parseErr){ showToast('SVG file appears to be corrupted.','warn'); return; }
+
+    const svgEl2=doc.querySelector('svg');
+    if(!svgEl2){ showToast('No SVG element found in file.','warn'); return; }
+
+    // Collect nodes — look for g[data-id] OR g[class*="node-g"]
+    const nodeEls=Array.from(doc.querySelectorAll('g[data-id], g[data-shape]'));
+    if(!nodeEls.length){ showToast('No editable nodes found. Make sure this was exported from the Flowchart Builder.','warn'); return; }
 
     if(Object.keys(nodes).length>0&&!confirm('Import will replace the current canvas. Continue?'))return;
     clearCanvas(true);
 
-    const importedNodes={};
+    const importedNodes={};   // svgId → canvas id
+    const nodeBoxes={};       // svgId → {x,y,w,h,cx,cy}
+
     nodeEls.forEach(g=>{
       const id=g.getAttribute('data-id');
       const shape=g.getAttribute('data-shape');
@@ -1609,96 +1616,128 @@ function importSVGText(svgText){
 
       // Parse transform="translate(x,y)"
       const tr=g.getAttribute('transform')||'';
-      const tm=tr.match(/translate\(\s*([\d.\-]+)\s*,\s*([\d.\-]+)\s*\)/);
+      const tm=tr.match(/translate\(\s*([-\d.]+)\s*[,\s]\s*([-\d.]+)\s*\)/);
       const x=tm?parseFloat(tm[1]):100;
       const y=tm?parseFloat(tm[2]):100;
 
-      // Extract label from first <text> element's tspans
+      // Extract label from tspans or text
       let label='';
       const textEl2=g.querySelector('text');
       if(textEl2){
         const tspans=textEl2.querySelectorAll('tspan');
-        if(tspans.length){
-          label=Array.from(tspans).map(ts=>ts.textContent.trim()).join(' ').trim();
-        }else{
-          label=textEl2.textContent.trim();
-        }
+        label=tspans.length
+          ? Array.from(tspans).map(ts=>ts.textContent.trim()).filter(Boolean).join(' ')
+          : textEl2.textContent.trim();
       }
 
-      // Extract size from body element
+      // Extract dimensions from body shape
       let w,h;
       if(shape==='decision'){
         const poly=g.querySelector('polygon');
         if(poly){
-          const pts=poly.getAttribute('points').split(/[\s,]+/).map(Number).filter(v=>!isNaN(v));
-          // points: w/2,0  w,h/2  w/2,h  0,h/2
-          w=pts[2]||DIAM_W; h=pts[5]||DIAM_H;
+          // points like "74,0 148,53 74,106 0,53" → rightmost x = w, bottom y = h
+          const coords=poly.getAttribute('points').trim().split(/[\s,]+/).map(Number);
+          // coords: x0,y0,x1,y1,x2,y2,x3,y3
+          const xs=coords.filter((_,i)=>i%2===0);
+          const ys=coords.filter((_,i)=>i%2===1);
+          w=Math.max(...xs)*2; h=Math.max(...ys)*2;
         }
       }else{
-        const rect=g.querySelector('rect:not(.resize-handle)');
-        if(rect){ w=parseFloat(rect.getAttribute('width'))||NODE_W; h=parseFloat(rect.getAttribute('height'))||NODE_H; }
+        // Find the main rect (not resize-handle)
+        const rects=Array.from(g.querySelectorAll('rect'));
+        const main=rects.find(r=>!r.classList.contains('resize-handle'))||rects[0];
+        if(main){ w=parseFloat(main.getAttribute('width')); h=parseFloat(main.getAttribute('height')); }
       }
       w=w||NODE_W; h=h||NODE_H;
 
-      // Add node using fixed id so edges can reference it
       const nid=addNode(shape,x,y,label,id);
-      // Apply custom dimensions
       const nd=nodes[nid];
       if(nd&&(nd.w!==w||nd.h!==h)){
-        nd.w=w;nd.h=h;
+        nd.w=w; nd.h=h;
         updateNodeGeometry(nid);
       }
       importedNodes[id]=nid;
+      nodeBoxes[id]={x,y,w,h,cx:x+w/2,cy:y+h/2};
     });
 
-    // Extract edges from <path> elements in edges-g that have data-edge-id
-    // Edge data is embedded as data attributes on the path
-    const edgeEls=doc.querySelectorAll('path[data-edge-id]');
-    // Also look for edge metadata in a <metadata> or data- attributes on labelG
-    // Since exported SVGs may not preserve from/to data, we try to infer
-    // from data-edge-id paths — but the exported SVG doesn't contain from/to.
-    // We store edge data as a JSON comment in the SVG during export.
-    // For now, extract from embedded JSON data if present.
-
-    // Check for embedded edge data comment
+    // ── Restore edges ─────────────────────────────────────────────────────────
+    // 1) Prefer embedded JSON in <desc>
     let edgeData=[];
-    const comments=[];
-    const walk=node=>{
-      if(node.nodeType===8)comments.push(node.textContent);
-      node.childNodes.forEach(walk);
-    };
-    walk(doc);
-    const edgeComment=comments.find(c=>c.trim().startsWith('edges:'));
-    if(edgeComment){
-      try{ edgeData=JSON.parse(edgeComment.trim().slice(6)); }catch(e){}
-    }
-
-    // Also check for a <desc> element with edge data
     const desc=svgEl2.querySelector(':scope > desc');
-    if(!edgeData.length&&desc){
+    if(desc){
       try{
         const parsed=JSON.parse(desc.textContent);
-        if(parsed.edges)edgeData=parsed.edges;
+        if(Array.isArray(parsed.edges))edgeData=parsed.edges;
       }catch(e){}
     }
+    // 2) Fallback: infer from path geometry — match path endpoints to nearest node ports
+    if(!edgeData.length){
+      const pathEls=doc.querySelectorAll('#edges-g path, g[id="edges-g"] path');
+      pathEls.forEach(p=>{
+        const d=p.getAttribute('d')||'';
+        // Extract first M point and last L/Q point
+        const mMatch=d.match(/M\s*([-\d.]+)[,\s]([-\d.]+)/);
+        const lMatches=[...d.matchAll(/[LQ]\s*([-\d.]+)[,\s]([-\d.]+)/g)];
+        if(!mMatch||!lMatches.length)return;
 
-    if(edgeData.length){
-      edgeData.forEach(ed=>{
-        if(!importedNodes[ed.from]&&!nodes[ed.from])return;
-        if(!importedNodes[ed.to]&&!nodes[ed.to])return;
-        conn={fromId:ed.from,fromPort:ed.fromPort};
-        finishConn(ed.to,ed.toPort,ed.id,ed.label);
-        conn=null;
+        const startX=parseFloat(mMatch[1]), startY=parseFloat(mMatch[2]);
+        const lastL=lMatches[lMatches.length-1];
+        const endX=parseFloat(lastL[1]), endY=parseFloat(lastL[2]);
+
+        // Find nearest node port for start and end
+        const fromInfo=nearestPort(startX,startY,nodeBoxes,null);
+        const toInfo=nearestPort(endX,endY,nodeBoxes,fromInfo?.id);
+        if(!fromInfo||!toInfo||fromInfo.id===toInfo.id)return;
+
+        // Extract label from adjacent edge-label-g if any
+        const eid=p.getAttribute('data-edge-id')||('e_imp_'+edgeData.length);
+        let label='';
+        const lgEl=doc.querySelector(`.edge-label-g[data-edge-id="${eid}"]`);
+        if(lgEl){
+          const ltx=lgEl.querySelector('text');
+          if(ltx)label=ltx.textContent.trim();
+        }
+
+        edgeData.push({id:eid,from:fromInfo.id,fromPort:fromInfo.port,to:toInfo.id,toPort:toInfo.port,label});
       });
     }
 
+    // Deduplicate inferred edges (same from+to combo)
+    const seen=new Set();
+    edgeData.forEach(ed=>{
+      const key=`${ed.from}→${ed.to}`;
+      if(seen.has(key))return; seen.add(key);
+      if(!importedNodes[ed.from]&&!nodes[ed.from])return;
+      if(!importedNodes[ed.to]&&!nodes[ed.to])return;
+      conn={fromId:ed.from,fromPort:ed.fromPort};
+      finishConn(ed.to,ed.toPort,ed.id,ed.label||'');
+      conn=null;
+    });
+
     redrawEdges();
     updateStatus();
-    showToast(`Imported ${Object.keys(importedNodes).length} nodes`,'ok');
+    // reset view to show imported content
+    panX=0;panY=0;zoom=1;applyViewport();
+    showToast(`Imported ${Object.keys(importedNodes).length} nodes, ${edgeData.length} connections`,'ok');
   }catch(err){
     console.error('SVG import error:',err);
-    showToast('Could not import SVG — make sure it was exported from this tool.','warn');
+    showToast('Import failed — check the browser console for details.','warn');
   }
+}
+
+// Find the nearest port on any node to a given point
+function nearestPort(px,py,nodeBoxes,excludeId){
+  const portOffsets={n:[0.5,0],s:[0.5,1],e:[1,0.5],w:[0,0.5]};
+  let best=null, bestD=Infinity;
+  Object.entries(nodeBoxes).forEach(([id,b])=>{
+    if(id===excludeId)return;
+    Object.entries(portOffsets).forEach(([port,[rx,ry]])=>{
+      const ppx=b.x+b.w*rx, ppy=b.y+b.h*ry;
+      const d=Math.hypot(ppx-px,ppy-py);
+      if(d<bestD){bestD=d;best={id,port};}
+    });
+  });
+  return bestD<120?best:null; // only accept if within 120px
 }
 
 // Override exportSVG to also embed edge data for round-trip import
