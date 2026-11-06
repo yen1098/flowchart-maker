@@ -698,7 +698,9 @@ function nodeDims(shape){
 
 function addNode(shape,x,y,label,fixedId){
   const id=fixedId||'n'+(++nodeCounter);
-  if(!fixedId)nodeCounter=Math.max(nodeCounter,parseInt(id.slice(1))||nodeCounter);
+  // Keep counter ahead of any imported ids so new nodes don't collide
+  const numPart=parseInt((id||'').replace(/\D+/,''))||0;
+  if(numPart>nodeCounter)nodeCounter=numPart;
   const{w,h}=nodeDims(shape);
   if(x==null){
     // place at viewport center in world coords
@@ -1661,9 +1663,11 @@ function importSVGText(svgText){
     });
 
     // ── Restore edges ─────────────────────────────────────────────────────────
-    // 1) Prefer embedded JSON in <desc>
+    // 1) Prefer embedded JSON in <desc> (direct child of <svg>)
     let edgeData=[];
-    const desc=svgEl2.querySelector(':scope > desc');
+    // avoid :scope which may throw in some DOMParser contexts
+    const descCandidates=Array.from(svgEl2.children).filter(c=>c.tagName.toLowerCase()==='desc');
+    const desc=descCandidates[0]||null;
     if(desc){
       try{
         const parsed=JSON.parse(desc.textContent);
@@ -1675,16 +1679,25 @@ function importSVGText(svgText){
       const pathEls=doc.querySelectorAll('#edges-g path, g[id="edges-g"] path');
       pathEls.forEach(p=>{
         const d=p.getAttribute('d')||'';
-        // Extract first M point and last L/Q point
-        const mMatch=d.match(/M\s*([-\d.]+)[,\s]([-\d.]+)/);
-        const lMatches=[...d.matchAll(/[LQ]\s*([-\d.]+)[,\s]([-\d.]+)/g)];
-        if(!mMatch||!lMatches.length)return;
-
+        // Extract first M point
+        const mMatch=d.match(/M\s*([-\d.]+)[,\s]\s*([-\d.]+)/);
+        if(!mMatch)return;
         const startX=parseFloat(mMatch[1]), startY=parseFloat(mMatch[2]);
-        const lastL=lMatches[lMatches.length-1];
-        const endX=parseFloat(lastL[1]), endY=parseFloat(lastL[2]);
+
+        // Extract the final endpoint: last L x,y or last Q cx,cy ex,ey (endpoint is 3rd,4th number)
+        // Tokenise all path commands
+        const tokens=[...d.matchAll(/([MLQCZmlqcz])\s*([-\d.,\s]*)/g)];
+        let endX=startX, endY=startY;
+        tokens.forEach(tok=>{
+          const cmd=tok[1].toUpperCase();
+          const nums=tok[2].trim().split(/[\s,]+/).map(Number).filter(n=>!isNaN(n));
+          if(cmd==='L'&&nums.length>=2){ endX=nums[nums.length-2]; endY=nums[nums.length-1]; }
+          if(cmd==='Q'&&nums.length>=4){ endX=nums[nums.length-2]; endY=nums[nums.length-1]; }
+          if(cmd==='C'&&nums.length>=6){ endX=nums[nums.length-2]; endY=nums[nums.length-1]; }
+        });
 
         // Find nearest node port for start and end
+        if(endX===startX&&endY===startY)return; // no movement parsed
         const fromInfo=nearestPort(startX,startY,nodeBoxes,null);
         const toInfo=nearestPort(endX,endY,nodeBoxes,fromInfo?.id);
         if(!fromInfo||!toInfo||fromInfo.id===toInfo.id)return;
@@ -1721,7 +1734,7 @@ function importSVGText(svgText){
     showToast(`Imported ${Object.keys(importedNodes).length} nodes, ${edgeData.length} connections`,'ok');
   }catch(err){
     console.error('SVG import error:',err);
-    showToast('Import failed — check the browser console for details.','warn');
+    showToast('Import failed: '+err.message,'warn');
   }
 }
 
