@@ -364,6 +364,9 @@
     <div id="sidebar-bottom">
       <button class="sb-full-btn primary" onclick="openSaveModal()">💾 Save current canvas</button>
       <button class="sb-full-btn" onclick="triggerImportSVG()">📂 Import SVG to edit</button>
+      <button class="sb-full-btn" onclick="exportCollection()" title="Export all saved flowcharts to a backup file">⬇ Export saves</button>
+      <button class="sb-full-btn" onclick="triggerImportCollection()" title="Restore saved flowcharts from a backup file">⬆ Import saves</button>
+      <input type="file" id="collection-import-input" accept=".json" style="display:none">
     </div>
   </div>
 
@@ -450,6 +453,12 @@ const MIN_W={step:80,action:80,terminal:80,decision:100};
 const MIN_H={step:36,action:36,terminal:32,decision:60};
 const LS_KEY='banner_flowcharts_v1';
 const LS_DRAFT='banner_flowchart_draft_v1';
+
+// ── Safe localStorage wrapper (some sandboxes block it entirely) ──────────────
+const LS = (()=>{
+  try{ localStorage.setItem('__ls_test__','1'); localStorage.removeItem('__ls_test__'); return localStorage; }
+  catch(e){ return { getItem:()=>null, setItem:()=>{}, removeItem:()=>{} }; }
+})();
 
 // ── State ────────────────────────────────────────────────────────────────────
 let nodes={}, edges=[];
@@ -987,7 +996,9 @@ function finishConn(toId,toPort,fixedId,fixedLabel){
   const dup=edges.find(e=>e.from===conn.fromId&&e.fromPort===conn.fromPort&&e.to===toId&&e.toPort===toPort);
   if(dup)return;
   const id=fixedId||'e'+(++edgeCounter);
-  if(!fixedId)edgeCounter=Math.max(edgeCounter,parseInt(id.slice(1))||edgeCounter);
+  // Always keep counter ahead of any id used (whether fixed or generated)
+  const eNum=parseInt((id||'').replace(/\D+/,''))||0;
+  if(eNum>edgeCounter)edgeCounter=eNum;
   const pathEl=svgEl('path',{stroke:'#6B7280','stroke-width':'2',fill:'none','marker-end':'url(#arrow)',style:'cursor:pointer;','stroke-linecap':'round'});
   const hitEl=svgEl('path',{stroke:'transparent','stroke-width':'12',fill:'none',style:'cursor:pointer;'});
   hitEl.dataset.edgeId=id;hitEl.addEventListener('click',onEdgeClick);
@@ -1248,16 +1259,62 @@ function flashSaved(){
 
 function loadCollection(){
   try{
-    const raw=localStorage.getItem(LS_KEY);
+    const raw=LS.getItem(LS_KEY);
     if(raw)return JSON.parse(raw);
   }catch(e){}
   return{folders:{}};
 }
 
 function saveCollection(){
-  try{ localStorage.setItem(LS_KEY,JSON.stringify(collection)); }
+  try{ LS.setItem(LS_KEY,JSON.stringify(collection)); }
   catch(e){ showToast('localStorage full — could not save','warn'); }
 }
+
+function exportCollection(){
+  const json=JSON.stringify(collection,null,2);
+  const blob=new Blob([json],{type:'application/json'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='banner_flowcharts_backup.json';
+  a.click(); URL.revokeObjectURL(a.href);
+  showToast('Saves exported','ok');
+}
+
+function triggerImportCollection(){
+  document.getElementById('collection-import-input').value='';
+  document.getElementById('collection-import-input').click();
+}
+
+document.addEventListener('DOMContentLoaded',()=>{
+  const ci=document.getElementById('collection-import-input');
+  if(ci) ci.addEventListener('change',function(){
+    const file=this.files[0]; if(!file)return;
+    const reader=new FileReader();
+    reader.onload=e=>{
+      try{
+        const data=JSON.parse(e.target.result);
+        if(!data||!data.folders)throw new Error('Invalid backup file');
+        if(!confirm('This will merge the backup with your current saves. Continue?'))return;
+        // Merge folders
+        Object.entries(data.folders).forEach(([fid,folder])=>{
+          if(!collection.folders[fid]){
+            collection.folders[fid]=folder;
+          } else {
+            // Merge flowcharts within folder
+            Object.entries(folder.flowcharts||{}).forEach(([fcid,fc])=>{
+              collection.folders[fid].flowcharts[fcid]=fc;
+            });
+          }
+        });
+        saveCollection(); renderSidebar();
+        showToast('Saves imported successfully','ok');
+      }catch(err){
+        showToast('Could not read backup: '+err.message,'warn');
+      }
+    };
+    reader.readAsText(file);
+  });
+});
 
 // Serialise current canvas to a plain JSON object
 function serialiseCanvas(){
@@ -1302,7 +1359,7 @@ function scheduleDraftSave(){
   clearTimeout(_draftTimer);
   _draftTimer=setTimeout(()=>{
     if(!Object.keys(nodes).length)return;
-    try{ localStorage.setItem(LS_DRAFT,JSON.stringify(serialiseCanvas())); }
+    try{ LS.setItem(LS_DRAFT,JSON.stringify(serialiseCanvas())); }
     catch(e){}
     // If we have an active flowchart, also update it in its folder
     if(currentFlowchartId){
@@ -1322,7 +1379,7 @@ function scheduleDraftSave(){
 // Restore draft on load
 function restoreDraft(){
   try{
-    const raw=localStorage.getItem(LS_DRAFT);
+    const raw=LS.getItem(LS_DRAFT);
     if(raw){
       const data=JSON.parse(raw);
       if(data&&Object.keys(data.nodes||{}).length>0){
@@ -1637,12 +1694,11 @@ function importSVGText(svgText){
       if(shape==='decision'){
         const poly=g.querySelector('polygon');
         if(poly){
-          // points like "74,0 148,53 74,106 0,53" → rightmost x = w, bottom y = h
+          // points like "74,0 148,53 74,106 0,53" — rightmost x IS the full width, bottommost y IS the full height
           const coords=poly.getAttribute('points').trim().split(/[\s,]+/).map(Number);
-          // coords: x0,y0,x1,y1,x2,y2,x3,y3
           const xs=coords.filter((_,i)=>i%2===0);
           const ys=coords.filter((_,i)=>i%2===1);
-          w=Math.max(...xs)*2; h=Math.max(...ys)*2;
+          w=Math.max(...xs); h=Math.max(...ys);
         }
       }else{
         // Find the main rect (not resize-handle)
@@ -1684,17 +1740,17 @@ function importSVGText(svgText){
         if(!mMatch)return;
         const startX=parseFloat(mMatch[1]), startY=parseFloat(mMatch[2]);
 
-        // Extract the final endpoint: last L x,y or last Q cx,cy ex,ey (endpoint is 3rd,4th number)
-        // Tokenise all path commands
-        const tokens=[...d.matchAll(/([MLQCZmlqcz])\s*([-\d.,\s]*)/g)];
+        // Extract the final endpoint using exec loop (compatible alternative to matchAll spread)
         let endX=startX, endY=startY;
-        tokens.forEach(tok=>{
-          const cmd=tok[1].toUpperCase();
-          const nums=tok[2].trim().split(/[\s,]+/).map(Number).filter(n=>!isNaN(n));
+        const cmdRe=/([MLQCZmlqcz])\s*([-\d.,\s]*)/g;
+        let tok2;
+        while((tok2=cmdRe.exec(d))!==null){
+          const cmd=tok2[1].toUpperCase();
+          const nums=tok2[2].trim().split(/[\s,]+/).map(Number).filter(v=>!isNaN(v));
           if(cmd==='L'&&nums.length>=2){ endX=nums[nums.length-2]; endY=nums[nums.length-1]; }
           if(cmd==='Q'&&nums.length>=4){ endX=nums[nums.length-2]; endY=nums[nums.length-1]; }
           if(cmd==='C'&&nums.length>=6){ endX=nums[nums.length-2]; endY=nums[nums.length-1]; }
-        });
+        }
 
         // Find nearest node port for start and end
         if(endX===startX&&endY===startY)return; // no movement parsed
@@ -1733,7 +1789,7 @@ function importSVGText(svgText){
     panX=0;panY=0;zoom=1;applyViewport();
     showToast(`Imported ${Object.keys(importedNodes).length} nodes, ${edgeData.length} connections`,'ok');
   }catch(err){
-    console.error('SVG import error:',err);
+    console.error('SVG import error:',err, err.stack);
     showToast('Import failed: '+err.message,'warn');
   }
 }
