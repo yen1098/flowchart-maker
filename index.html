@@ -364,8 +364,10 @@
     <div id="sidebar-bottom">
       <button class="sb-full-btn primary" onclick="openSaveModal()">💾 Save current canvas</button>
       <button class="sb-full-btn" onclick="triggerImportSVG()">📂 Import SVG to edit</button>
-      <button class="sb-full-btn" onclick="exportCollection()" title="Export all saved flowcharts to a backup file">⬇ Export saves</button>
-      <button class="sb-full-btn" onclick="triggerImportCollection()" title="Restore saved flowcharts from a backup file">⬆ Import saves</button>
+      <div style="display:flex;gap:6px">
+        <button class="sb-full-btn" style="flex:1" onclick="exportCollection()" title="Backup all saved flowcharts to a file">⬇ Backup</button>
+        <button class="sb-full-btn" style="flex:1" onclick="triggerImportCollection()" title="Restore from a backup file">⬆ Restore</button>
+      </div>
       <input type="file" id="collection-import-input" accept=".json" style="display:none">
     </div>
   </div>
@@ -1285,9 +1287,8 @@ function triggerImportCollection(){
   document.getElementById('collection-import-input').click();
 }
 
-document.addEventListener('DOMContentLoaded',()=>{
-  const ci=document.getElementById('collection-import-input');
-  if(ci) ci.addEventListener('change',function(){
+// Script is at end of body so DOM is ready — attach directly, no DOMContentLoaded needed
+document.getElementById('collection-import-input').addEventListener('change',function(){
     const file=this.files[0]; if(!file)return;
     const reader=new FileReader();
     reader.onload=e=>{
@@ -1313,7 +1314,6 @@ document.addEventListener('DOMContentLoaded',()=>{
       }
     };
     reader.readAsText(file);
-  });
 });
 
 // Serialise current canvas to a plain JSON object
@@ -1472,12 +1472,16 @@ function loadFlowchart(fid,fcid){
   const folder=collection.folders[fid];
   if(!folder)return;
   const fc=folder.flowcharts&&folder.flowcharts[fcid];
-  if(!fc)return;
+  if(!fc||!fc.data){showToast('No saved data found for this flowchart','warn');return;}
   if(Object.keys(nodes).length>0&&!confirm('Load this flowchart? Unsaved changes will be lost.')){return;}
-  deserialiseCanvas(fc.data);
+  const ok=deserialiseCanvas(fc.data);
+  if(!ok){showToast('Could not load — data may be corrupted','warn');return;}
   currentFlowchartId=fcid;
+  // fit view to show all loaded nodes
+  panX=0;panY=0;zoom=1;applyViewport();
   renderSidebar();
-  showToast(`Loaded: ${fc.name}`,'ok');
+  const n=Object.keys(nodes).length;
+  showToast(`Loaded: ${fc.name}${n?' ('+n+' nodes)':''}`,'ok');
 }
 
 // ── Context menu ──────────────────────────────────────────────────────────────
@@ -1566,7 +1570,7 @@ function openModal(title,bodyHTML,okFn){
   _modalOKFn=okFn;
   document.getElementById('modal-overlay').classList.add('show');
   setTimeout(()=>{ const inp=document.querySelector('#modal-body input,#modal-body select'); if(inp){inp.focus();inp.select&&inp.select();} },50);
-  document.querySelector('#modal-body input')?.addEventListener('keydown',e=>{ if(e.key==='Enter')modalOK(); });
+  document.querySelectorAll('#modal-body input').forEach(inp=>inp.addEventListener('keydown',e=>{ if(e.key==='Enter')modalOK(); }));
 }
 function closeModal(){ document.getElementById('modal-overlay').classList.remove('show');_modalOKFn=null; }
 function modalOK(){ if(_modalOKFn)_modalOKFn(); closeModal(); }
