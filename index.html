@@ -342,6 +342,8 @@
   <div class="sep"></div>
   <button class="mode-btn active" id="btn-select" onclick="setMode('select')">&#10022; Select <span class="kbd">V</span></button>
   <button class="mode-btn" id="btn-connect" onclick="setMode('connect')">&#10551; Connect <span class="kbd">C</span></button>
+  <div class="sep"></div>
+  <button class="mode-btn active" id="btn-snap" onclick="toggleSnap()" title="Snap tiles and lines to align with each other">&#128204; Snap <span class="kbd">G</span></button>
 </div>
 
 <div id="main-row">
@@ -404,6 +406,10 @@
         <path id="freehand-path" d="" stroke="#E8503A" stroke-width="2"
               stroke-dasharray="5,4" fill="none" stroke-linecap="round"
               style="display:none; pointer-events:none"/>
+        <line id="snap-guide-v" x1="0" y1="-5000" x2="0" y2="5000" stroke="#E8503A" stroke-width="1"
+              stroke-dasharray="4,3" style="display:none; pointer-events:none"/>
+        <line id="snap-guide-h" x1="-5000" y1="0" x2="5000" y2="0" stroke="#E8503A" stroke-width="1"
+              stroke-dasharray="4,3" style="display:none; pointer-events:none"/>
       </g>
     </svg>
     <!-- Zoom controls -->
@@ -470,6 +476,8 @@ let mode='select';
 let drag=null, resize=null, conn=null, snapPort=null, selBox=null, freehand=null;
 let editingNodeId=null;
 let currentFlowchartId=null;
+let snapEnabled=true;
+const SNAP_GRID=24; // matches dot-grid spacing
 
 // ── Pan/zoom state ────────────────────────────────────────────────────────────
 let panX=0, panY=0, zoom=1;
@@ -489,6 +497,8 @@ const previewLn=document.getElementById('preview-line')||document.createElementN
 const freehandP=document.getElementById('freehand-path')||document.createElementNS('http://www.w3.org/2000/svg','path');
 const selBoxEl=document.getElementById('selbox')||document.createElement('div');
 const nodeEditTa=document.getElementById('node-edit-ta')||document.createElement('textarea');
+const snapGuideV=document.getElementById('snap-guide-v')||document.createElementNS('http://www.w3.org/2000/svg','line');
+const snapGuideH=document.getElementById('snap-guide-h')||document.createElementNS('http://www.w3.org/2000/svg','line');
 
 // ── SVG helpers ──────────────────────────────────────────────────────────────
 const SVG_NS='http://www.w3.org/2000/svg';
@@ -654,6 +664,78 @@ function setMode(m){
   document.getElementById('st-mode').textContent=m==='select'?'Select':'Connect';
   wrap.classList.toggle('connect-mode',m==='connect');
   if(m==='select'){cancelConn();cancelFreehand();}
+}
+
+// ── Snapping (align tiles & lines) ───────────────────────────────────────────
+function toggleSnap(){
+  snapEnabled=!snapEnabled;
+  const btn=document.getElementById('btn-snap');
+  if(btn)btn.classList.toggle('active',snapEnabled);
+  showToast(snapEnabled?'Snapping on':'Snapping off',snapEnabled?'ok':'warn');
+  if(!snapEnabled)hideSnapGuides();
+}
+
+function hideSnapGuides(){
+  snapGuideV.style.display='none';
+  snapGuideH.style.display='none';
+}
+
+// Given the raw drag delta, find the nearest alignment with other (non-dragged)
+// nodes' edges/centers, falling back to the grid. Returns the adjusted {dx,dy}
+// and, if a guide line should be drawn, its world-space position.
+function computeDragSnap(dx,dy,nodeStarts){
+  const threshold=8/zoom;
+  const leadId=Object.keys(nodeStarts)[0];
+  const lead=nodes[leadId];
+  if(!lead)return{dx,dy,guideX:null,guideY:null};
+  const start=nodeStarts[leadId];
+  const nx=start.x+dx, ny=start.y+dy;
+  const candX=[nx,nx+lead.w/2,nx+lead.w];
+  const candY=[ny,ny+lead.h/2,ny+lead.h];
+
+  let bestDx=null,bestDxDist=threshold,guideX=null;
+  let bestDy=null,bestDyDist=threshold,guideY=null;
+
+  Object.values(nodes).forEach(other=>{
+    if(nodeStarts[other.id])return; // skip nodes being dragged
+    const ox=[other.x,other.x+other.w/2,other.x+other.w];
+    const oy=[other.y,other.y+other.h/2,other.y+other.h];
+    candX.forEach(a=>ox.forEach(b=>{
+      const d=Math.abs(a-b);
+      if(d<bestDxDist){bestDxDist=d;bestDx=dx+(b-a);guideX=b;}
+    }));
+    candY.forEach(a=>oy.forEach(b=>{
+      const d=Math.abs(a-b);
+      if(d<bestDyDist){bestDyDist=d;bestDy=dy+(b-a);guideY=b;}
+    }));
+  });
+
+  // Fall back to grid snap if no node alignment found
+  if(bestDx==null){
+    const gx=Math.round(nx/SNAP_GRID)*SNAP_GRID;
+    if(Math.abs(nx-gx)<threshold)bestDx=dx+(gx-nx);
+  }
+  if(bestDy==null){
+    const gy=Math.round(ny/SNAP_GRID)*SNAP_GRID;
+    if(Math.abs(ny-gy)<threshold)bestDy=dy+(gy-ny);
+  }
+
+  return{
+    dx:bestDx!=null?bestDx:dx,
+    dy:bestDy!=null?bestDy:dy,
+    guideX,guideY
+  };
+}
+
+function showSnapGuides(guideX,guideY){
+  if(guideX!=null){
+    snapGuideV.setAttribute('x1',guideX);snapGuideV.setAttribute('x2',guideX);
+    snapGuideV.style.display='';
+  }else snapGuideV.style.display='none';
+  if(guideY!=null){
+    snapGuideH.setAttribute('y1',guideY);snapGuideH.setAttribute('y2',guideY);
+    snapGuideH.style.display='';
+  }else snapGuideH.style.display='none';
 }
 
 // ── Selection ─────────────────────────────────────────────────────────────────
@@ -918,7 +1000,16 @@ document.addEventListener('mousemove',e=>{
   }
 
   if(drag){
-    const dx=pt.x-drag.startPt.x,dy=pt.y-drag.startPt.y;
+    let dx=pt.x-drag.startPt.x,dy=pt.y-drag.startPt.y;
+    // Shift temporarily disables snapping, the opposite of the global toggle
+    const useSnap=snapEnabled!==e.shiftKey;
+    if(useSnap){
+      const snap=computeDragSnap(dx,dy,drag.nodeStarts);
+      dx=snap.dx;dy=snap.dy;
+      showSnapGuides(snap.guideX,snap.guideY);
+    }else{
+      hideSnapGuides();
+    }
     Object.entries(drag.nodeStarts).forEach(([sid,start])=>{
       const n=nodes[sid];if(!n)return;
       n.x=start.x+dx;n.y=start.y+dy;
@@ -951,7 +1042,8 @@ document.addEventListener('mousemove',e=>{
   }
 
   if(conn){
-    snapPort=null;let bestD=28;
+    const useLineSnap=snapEnabled!==e.shiftKey;
+    snapPort=null;let bestD=useLineSnap?28:10;
     Object.values(nodes).forEach(n=>{
       if(n.id===conn.fromId)return;
       ['n','s','e','w'].forEach(p=>{
@@ -977,7 +1069,7 @@ document.addEventListener('mouseup',e=>{
   if(isPanning){isPanning=false;panStart=null;wrap.classList.remove('panning');return;}
   const pt=c2w(e.clientX,e.clientY);
   if(resize){resize=null;scheduleDraftSave();return;}
-  if(drag){drag=null;scheduleDraftSave();return;}
+  if(drag){drag=null;hideSnapGuides();scheduleDraftSave();return;}
   if(selBox){selBox=null;selBoxEl.style.display='none';return;}
   if(conn){
     clearSnapHighlight();
@@ -1138,6 +1230,7 @@ document.addEventListener('keydown',e=>{
   if(e.key==='d'||e.key==='D')addNode('decision');
   if(e.key==='t'||e.key==='T')addNode('terminal');
   if(e.key==='a'||e.key==='A')addNode('action');
+  if(e.key==='g'||e.key==='G')toggleSnap();
   if(e.key==='Delete'||e.key==='Backspace')deleteSelected();
   if(e.key==='Escape'){cancelConn();cancelFreehand();deselectAll();}
   if((e.key==='0')&&(e.ctrlKey||e.metaKey)){e.preventDefault();zoomReset();}
@@ -1841,6 +1934,17 @@ function exportSVGWithMeta(){
   const clone=mainSvg.cloneNode(true);
   clone.setAttribute('width',W);clone.setAttribute('height',H);
   clone.setAttribute('viewBox',`${minX} ${minY} ${W} ${H}`);
+  // The live #viewport carries whatever pan/zoom transform was on screen when
+  // export was clicked. The viewBox above is computed from raw node world
+  // coordinates, so that transform must be reset to identity here or the
+  // exported content renders shifted/scaled outside the viewBox — which looks
+  // like an "empty" export.
+  const cloneViewport=clone.querySelector('#viewport');
+  if(cloneViewport)cloneViewport.removeAttribute('transform');
+  // Replace the dotted canvas background with a plain white fill for export
+  const cloneBg=clone.querySelector('#canvas-bg-rect');
+  if(cloneBg)cloneBg.setAttribute('fill','#ffffff');
+  clone.querySelectorAll('#snap-guide-v,#snap-guide-h').forEach(el=>el.remove());
   clone.querySelectorAll('#preview-line,#freehand-path,.port,.resize-handle').forEach(el=>el.remove());
   clone.querySelectorAll('path[stroke="transparent"]').forEach(el=>el.remove());
   clone.querySelectorAll('.edge-label-g').forEach(el=>{
