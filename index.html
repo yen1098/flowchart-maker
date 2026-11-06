@@ -480,15 +480,15 @@ let sidebarVisible=true;
 // Structure: { folders: { [folderId]: { name, flowcharts: { [fcId]: { name, data } } } } }
 let collection = loadCollection();
 
-const wrap=document.getElementById('canvas-wrap');
-const mainSvg=document.getElementById('main-svg');
-const viewport=document.getElementById('viewport');
-const edgesG=document.getElementById('edges-g');
-const nodesG=document.getElementById('nodes-g');
-const previewLn=document.getElementById('preview-line');
-const freehandP=document.getElementById('freehand-path');
-const selBoxEl=document.getElementById('selbox');
-const nodeEditTa=document.getElementById('node-edit-ta');
+const wrap=document.getElementById('canvas-wrap')||document.createElement('div');
+const mainSvg=document.getElementById('main-svg')||document.createElementNS('http://www.w3.org/2000/svg','svg');
+const viewport=document.getElementById('viewport')||document.createElementNS('http://www.w3.org/2000/svg','g');
+const edgesG=document.getElementById('edges-g')||document.createElementNS('http://www.w3.org/2000/svg','g');
+const nodesG=document.getElementById('nodes-g')||document.createElementNS('http://www.w3.org/2000/svg','g');
+const previewLn=document.getElementById('preview-line')||document.createElementNS('http://www.w3.org/2000/svg','path');
+const freehandP=document.getElementById('freehand-path')||document.createElementNS('http://www.w3.org/2000/svg','path');
+const selBoxEl=document.getElementById('selbox')||document.createElement('div');
+const nodeEditTa=document.getElementById('node-edit-ta')||document.createElement('textarea');
 
 // ── SVG helpers ──────────────────────────────────────────────────────────────
 const SVG_NS='http://www.w3.org/2000/svg';
@@ -553,9 +553,9 @@ function applyViewport(){
   const r=wrap.getBoundingClientRect();
   // offset the pattern so dots align with viewport origin
   const pat=document.getElementById('dot-grid');
-  pat.setAttribute('x', (panX % 24));
-  pat.setAttribute('y', (panY % 24));
-  document.getElementById('zoom-label').textContent=Math.round(zoom*100)+'%';
+  if(pat){pat.setAttribute('x', (panX % 24));pat.setAttribute('y', (panY % 24));}
+  const zl=document.getElementById('zoom-label');
+  if(zl)zl.textContent=Math.round(zoom*100)+'%';
   // reposition node textarea overlay to match viewport
   if(editingNodeId&&nodes[editingNodeId]){
     const n=nodes[editingNodeId];
@@ -588,9 +588,8 @@ function toggleSidebar(){
   sidebarVisible=!sidebarVisible;
   const sb=document.getElementById('sidebar');
   const btn=document.getElementById('sidebar-toggle');
-  sb.classList.toggle('collapsed',!sidebarVisible);
-  btn.textContent=sidebarVisible?'◀':'▶';
-  btn.style.left=sidebarVisible?'':'0';
+  if(sb)sb.classList.toggle('collapsed',!sidebarVisible);
+  if(btn){btn.textContent=sidebarVisible?'◀':'▶';btn.style.left=sidebarVisible?'':'0';}
 }
 
 // ── Coordinates ──────────────────────────────────────────────────────────────
@@ -721,7 +720,7 @@ function addNode(shape,x,y,label,fixedId){
   label=label||{step:'Step',decision:'Decision?',terminal:'Start/End',action:'Action'}[shape]||'Node';
 
   const g=svgEl('g',{class:'node-g','data-id':id,'data-shape':shape});
-  g.style.cursor='grab';
+  if(g.style)g.style.cursor='grab';
 
   let bodyEl;
   if(shape==='decision'){
@@ -1176,8 +1175,10 @@ function deleteSelected(){
 }
 
 function updateStatus(){
-  document.getElementById('st-nodes').textContent=Object.keys(nodes).length;
-  document.getElementById('st-edges').textContent=edges.length;
+  const sn=document.getElementById('st-nodes');
+  const se=document.getElementById('st-edges');
+  if(sn)sn.textContent=Object.keys(nodes).length;
+  if(se)se.textContent=edges.length;
 }
 
 // ── Clear ─────────────────────────────────────────────────────────────────────
@@ -1250,6 +1251,7 @@ function showToast(msg,type){
 // ── Auto-save dot flash ──────────────────────────────────────────────────────
 function flashSaved(){
   const dot=document.getElementById('autosave-dot');
+  if(!dot)return;
   dot.style.opacity='1';
   clearTimeout(dot._h);
   dot._h=setTimeout(()=>dot.style.opacity='0',1500);
@@ -1288,7 +1290,7 @@ function triggerImportCollection(){
 }
 
 // Script is at end of body so DOM is ready — attach directly, no DOMContentLoaded needed
-document.getElementById('collection-import-input').addEventListener('change',function(){
+document.getElementById('collection-import-input')?.addEventListener('change',function(){
     const file=this.files[0]; if(!file)return;
     const reader=new FileReader();
     reader.onload=e=>{
@@ -1328,29 +1330,35 @@ function serialiseCanvas(){
 
 // Load a serialised canvas object onto the canvas
 function deserialiseCanvas(data){
-  if(!data||!data.nodes)return false;
-  clearCanvas(true);
-  nodeCounter=data.nodeCounter||0;
-  edgeCounter=data.edgeCounter||0;
-  // restore nodes
-  Object.values(data.nodes).forEach(n=>{
-    addNode(n.shape,n.x,n.y,n.label,n.id);
-    // restore custom size
-    const nd=nodes[n.id];
-    if(nd&&(nd.w!==n.w||nd.h!==n.h)){
-      nd.w=n.w;nd.h=n.h;
-      updateNodeGeometry(n.id);
-    }
-  });
-  // restore edges
-  data.edges.forEach(e=>{
-    conn={fromId:e.from,fromPort:e.fromPort};
-    finishConn(e.to,e.toPort,e.id,e.label);
-    conn=null;
-  });
-  redrawEdges();
-  updateStatus();
-  return true;
+  try{
+    if(!data||!data.nodes)return false;
+    if(!Object.keys(data.nodes).length)return false;
+    clearTimeout(_draftTimer); // prevent pending save from clobbering what we're about to load
+    clearCanvas(true);
+    nodeCounter=data.nodeCounter||0;
+    edgeCounter=data.edgeCounter||0;
+    Object.values(data.nodes).forEach(n=>{
+      if(!n.shape||n.x==null||n.y==null)return;
+      addNode(n.shape,n.x,n.y,n.label||'',n.id);
+      const nd=nodes[n.id];
+      if(nd&&(nd.w!==n.w||nd.h!==n.h)){
+        nd.w=n.w||nd.w; nd.h=n.h||nd.h;
+        updateNodeGeometry(n.id);
+      }
+    });
+    (data.edges||[]).forEach(e=>{
+      if(!e.from||!e.to)return;
+      conn={fromId:e.from,fromPort:e.fromPort||'s'};
+      finishConn(e.to,e.toPort||'n',e.id,e.label||'');
+      conn=null;
+    });
+    redrawEdges();
+    updateStatus();
+    return Object.keys(nodes).length>0;
+  }catch(err){
+    console.error('deserialiseCanvas error:',err);
+    return false;
+  }
 }
 
 // Draft auto-save (debounced)
@@ -1399,15 +1407,15 @@ function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(
 function renderSidebar(){
   const scroll=document.getElementById('sidebar-scroll');
   const empty=document.getElementById('sidebar-empty');
+  if(!scroll)return;
   const folderIds=Object.keys(collection.folders);
 
   if(!folderIds.length){
     scroll.innerHTML='';
-    scroll.appendChild(empty);
-    empty.style.display='block';
+    if(empty){scroll.appendChild(empty);empty.style.display='block';}
     return;
   }
-  empty.style.display='none';
+  if(empty)empty.style.display='none';
   scroll.innerHTML='';
 
   folderIds.forEach(fid=>{
@@ -1489,16 +1497,19 @@ let _ctxTarget=null;
 function openCtxMenu(e,target){
   _ctxTarget=target;
   const menu=document.getElementById('ctx-menu');
-  document.getElementById('ctx-rename').style.display='flex';
-  document.getElementById('ctx-move').style.display=target.type==='fc'?'flex':'none';
+  if(!menu)return;
+  const cr=document.getElementById('ctx-rename');
+  const cm=document.getElementById('ctx-move');
+  if(cr)cr.style.display='flex';
+  if(cm)cm.style.display=target.type==='fc'?'flex':'none';
   menu.style.display='block';
   const x=Math.min(e.clientX,window.innerWidth-180);
   const y=Math.min(e.clientY,window.innerHeight-120);
   menu.style.left=x+'px';menu.style.top=y+'px';
 }
-function closeCtxMenu(){ document.getElementById('ctx-menu').style.display='none';_ctxTarget=null; }
+function closeCtxMenu(){ const m=document.getElementById('ctx-menu');if(m)m.style.display='none';_ctxTarget=null; }
 document.addEventListener('click',()=>closeCtxMenu());
-document.getElementById('ctx-menu').addEventListener('click',e=>e.stopPropagation());
+document.getElementById('ctx-menu')?.addEventListener('click',e=>e.stopPropagation());
 
 function ctxRename(){
   if(!_ctxTarget)return;
@@ -1573,8 +1584,9 @@ function openModal(title,bodyHTML,okFn){
   document.querySelectorAll('#modal-body input').forEach(inp=>inp.addEventListener('keydown',e=>{ if(e.key==='Enter')modalOK(); }));
 }
 function closeModal(){ document.getElementById('modal-overlay').classList.remove('show');_modalOKFn=null; }
-function modalOK(){ if(_modalOKFn)_modalOKFn(); closeModal(); }
-document.getElementById('modal-overlay').addEventListener('click',e=>{ if(e.target===document.getElementById('modal-overlay'))closeModal(); });
+// okFn returns false to keep modal open (validation failed), anything else closes it
+function modalOK(){ if(_modalOKFn){ const r=_modalOKFn(); if(r===false)return; } closeModal(); }
+document.getElementById('modal-overlay')?.addEventListener('click',e=>{ if(e.target===document.getElementById('modal-overlay'))closeModal(); });
 
 // ── New folder modal ──────────────────────────────────────────────────────────
 function openNewFolderModal(){
@@ -1582,7 +1594,7 @@ function openNewFolderModal(){
     `<label>Folder name</label><input id="mi-folder-name" placeholder="e.g. Onboarding Flows" maxlength="60">`,
     ()=>{
       const name=document.getElementById('mi-folder-name').value.trim();
-      if(!name)return;
+      if(!name){showToast('Enter a folder name','warn');return false;}
       const fid=uid();
       collection.folders[fid]={name,flowcharts:{}};
       saveCollection(); renderSidebar();
@@ -1607,7 +1619,7 @@ function openSaveModal(){
     `${folderSel}<label>Flowchart name</label><input id="mi-sv-name" placeholder="e.g. Issue Triage Flow" maxlength="80" value="${escH(curName)}">`,
     ()=>{
       const name=document.getElementById('mi-sv-name').value.trim();
-      if(!name){showToast('Enter a name','warn');return;}
+      if(!name){showToast('Enter a name for this flowchart','warn');return false;}
 
       let fid;
       if(folderOpts){
@@ -1618,17 +1630,15 @@ function openSaveModal(){
         collection.folders[fid]={name:newFolderName,flowcharts:{}};
       }
       const folder=collection.folders[fid];
-      if(!folder){showToast('Folder not found','warn');return;}
+      if(!folder){showToast('Folder not found','warn');return false;}
       if(!folder.flowcharts)folder.flowcharts={};
 
-      // If updating existing, keep same id
       const fcid=currentFlowchartId&&folder.flowcharts[currentFlowchartId]
-        ? currentFlowchartId
-        : uid();
+        ? currentFlowchartId : uid();
       folder.flowcharts[fcid]={name,data:serialiseCanvas()};
       currentFlowchartId=fcid;
       saveCollection(); renderSidebar();
-      showToast(`Saved: ${name}`,'ok');
+      showToast(`✓ Saved: ${name}`,'ok');
       flashSaved();
     }
   );
@@ -1643,7 +1653,7 @@ function triggerImportSVG(){
   document.getElementById('svg-import-input').click();
 }
 
-document.getElementById('svg-import-input').addEventListener('change',function(){
+document.getElementById('svg-import-input')?.addEventListener('change',function(){
   const file=this.files[0];if(!file)return;
   const reader=new FileReader();
   reader.onload=e=>{ importSVGText(e.target.result); };
@@ -1666,8 +1676,10 @@ function importSVGText(svgText){
     const nodeEls=Array.from(doc.querySelectorAll('g[data-id], g[data-shape]'));
     if(!nodeEls.length){ showToast('No editable nodes found. Make sure this was exported from the Flowchart Builder.','warn'); return; }
 
-    if(Object.keys(nodes).length>0&&!confirm('Import will replace the current canvas. Continue?'))return;
+    if(Object.keys(nodes).length>0&&!confirm('Import will replace the current canvas. Continue?\n\nTip: Save your current work first if needed.'))return;
     clearCanvas(true);
+    // Cancel any pending draft save so it doesn't overwrite the import
+    clearTimeout(_draftTimer);
 
     const importedNodes={};   // svgId → canvas id
     const nodeBoxes={};       // svgId → {x,y,w,h,cx,cy}
@@ -1899,10 +1911,12 @@ function loadSample(){
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
-applyViewport();
-renderSidebar();
-restoreDraft();
-if(!Object.keys(nodes).length){ loadSample(); }
+try{
+  applyViewport();
+  renderSidebar();
+  restoreDraft();
+  if(!Object.keys(nodes).length){ loadSample(); }
+}catch(e){ console.warn('Init error (sandbox?):', e); }
 </script>
 </body>
 </html>
