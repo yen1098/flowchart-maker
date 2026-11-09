@@ -81,6 +81,8 @@
     transition: all 0.15s; white-space: nowrap;
   }
   .sb-icon-btn:hover { border-color: #1B2B4B; color: #1B2B4B; background: #f0f4ff; }
+  .sb-icon-btn.sb-new { background: #1B2B4B; border-color: #1B2B4B; color: #fff; font-weight: 600; }
+  .sb-icon-btn.sb-new:hover { background: #2a3f6b; color: #fff; }
   #sidebar-scroll { flex: 1; overflow-y: auto; padding: 8px 0; }
 
   /* Folder group */
@@ -301,6 +303,88 @@
     display: inline-block; opacity: 0;
     transition: opacity 0.4s;
   }
+
+  /* ── Palette extras ── */
+  #palette { flex-wrap: wrap; row-gap: 6px; }
+  #palette .spacer { flex: 1; }
+  .mode-btn:disabled { opacity: 0.4; cursor: default; }
+  .mode-btn:not(:disabled):not(.active):hover { border-color: #1B2B4B; background: #f0f4ff; }
+
+  #save-status {
+    font-size: 12px; padding: 4px 10px; border-radius: 999px;
+    white-space: nowrap; max-width: 340px; overflow: hidden; text-overflow: ellipsis;
+    border: 1px solid transparent;
+  }
+  #save-status.saved   { color: #15803D; background: #F0FDF4; border-color: #BBF7D0; }
+  #save-status.saving  { color: #6B7280; background: #F3F4F6; border-color: #E5E7EB; }
+  #save-status.unsaved { color: #B45309; background: #FFFBEB; border-color: #FDE68A; cursor: pointer; font-weight: 600; }
+  #save-status.blank   { color: #9CA3AF; background: transparent; }
+
+  /* ── Sidebar search ── */
+  #sidebar-search { position: relative; padding: 8px 10px 4px; background: #fafafa; }
+  #fc-search {
+    width: 100%; padding: 6px 26px 6px 9px; border: 1.5px solid #e0e0e0; border-radius: 7px;
+    font-size: 12px; font-family: inherit; outline: none; color: #1B2B4B; background: #fff;
+  }
+  #fc-search:focus { border-color: #1B2B4B; }
+  #fc-search-clear {
+    display: none; position: absolute; right: 16px; top: 13px; border: none; background: none;
+    cursor: pointer; color: #999; font-size: 14px; line-height: 1; padding: 0 2px;
+  }
+  .fc-item-btn { font-size: 11px; }
+  .fc-item-actions { gap: 0; }
+  .search-empty { text-align: center; padding: 18px 12px; font-size: 12px; color: #aaa; }
+
+  /* ── Inspector (selected tile / connector options) ── */
+  #inspector {
+    display: none; position: absolute; top: 12px; right: 14px; z-index: 300;
+    width: 232px; background: #fff; border: 1px solid #e0e0e0; border-radius: 10px;
+    box-shadow: 0 4px 18px rgba(0,0,0,0.12); padding: 10px 12px; font-size: 12px;
+    max-height: calc(100% - 24px); overflow-y: auto;
+  }
+  #inspector .insp-title { font-weight: 700; color: #1B2B4B; margin-bottom: 8px; font-size: 12px; }
+  #inspector .insp-label { font-size: 10px; text-transform: uppercase; letter-spacing: 0.7px; color: #999; margin: 8px 0 4px; font-weight: 600; }
+  #inspector .insp-hint { text-transform: none; letter-spacing: 0; font-weight: 400; color: #bbb; }
+  #inspector textarea, #inspector input {
+    width: 100%; border: 1.5px solid #e0e0e0; border-radius: 6px; padding: 5px 7px;
+    font-size: 12px; font-family: inherit; color: #1B2B4B; outline: none; resize: vertical;
+  }
+  #inspector textarea:focus, #inspector input:focus { border-color: #1B2B4B; }
+  #inspector .insp-row { display: flex; gap: 6px; margin-top: 6px; }
+  #inspector .insp-row input { flex: 1; min-width: 0; }
+  #insp-edge-label { margin-top: 6px; }
+  .insp-btn {
+    flex: 1; padding: 5px 8px; border: 1.5px solid #e0e0e0; border-radius: 6px; background: #fafafa;
+    font-size: 11px; font-family: inherit; color: #444; cursor: pointer; white-space: nowrap;
+  }
+  .insp-btn:hover { border-color: #1B2B4B; background: #f0f4ff; }
+  .insp-btn.on { background: #1B2B4B; color: #fff; border-color: #1B2B4B; }
+  .insp-btn.danger { color: #E8503A; }
+  .insp-btn.danger:hover { background: #fff0ee; border-color: #E8503A; }
+  #inspector .swatches { display: flex; flex-wrap: wrap; gap: 6px; }
+  .swatch {
+    width: 22px; height: 22px; border-radius: 50%; border: 2px solid #D1D5DB;
+    cursor: pointer; padding: 0; font-size: 11px; color: #999; line-height: 1;
+    display: flex; align-items: center; justify-content: center; background: #fff;
+  }
+  .swatch:hover { transform: scale(1.12); }
+  .swatch.on { box-shadow: 0 0 0 2px #fff, 0 0 0 4px #1B2B4B; }
+
+  /* ── Modal extras ── */
+  #modal-box.wide { max-width: 540px; }
+  #modal-box p { font-size: 13px; color: #555; line-height: 1.5; }
+  .modal-btn.extra { background: #EFF6FF; color: #1D4ED8; }
+  .modal-btn.extra:hover { background: #DBEAFE; }
+  .modal-btn.ok.danger { background: #E8503A; }
+  .modal-btn.ok.danger:hover { background: #cf4631; }
+  .sc-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 22px; margin-bottom: 14px; }
+  .sc-grid h4 { grid-column: 1 / -1; font-size: 10px; text-transform: uppercase; letter-spacing: 0.8px; color: #999; margin: 8px 0 2px; }
+  .sc-row { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #444; gap: 8px; }
+  .sc-row .kbd { margin-left: 0; white-space: nowrap; }
+  .sc-setting { border-top: 1px solid #eee; padding-top: 12px; }
+  .sc-setting small { display: block; color: #999; font-size: 11px; margin: -8px 0 12px; }
+
+  .node-badge { cursor: pointer; }
 </style>
 </head>
 <body>
@@ -309,13 +393,13 @@
   <div class="logo"><span>B</span>anner</div>
   <div class="logo" style="font-weight:400;font-size:13px;opacity:0.7">Flowchart Builder</div>
   <div class="sep"></div>
-  <button class="tb-btn" onclick="clearCanvas()">&#128465; Clear</button>
+  <button class="tb-btn" onclick="newFlowchart()" title="Start over with a blank canvas">&#128465; Clear</button>
   <button class="tb-btn" onclick="loadSample()">&#128203; Sample</button>
   <div class="spacer"></div>
   <span style="font-size:12px;opacity:0.5">Dbl-click shape to edit &middot; Dbl-click arrow to label it &middot; Drag ▪ corner to resize &middot; Del to delete</span>
   <span id="autosave-dot" title="Saved"></span>
   <div class="sep"></div>
-  <button class="tb-btn notion-btn" onclick="saveToNotion()">
+  <button class="tb-btn notion-btn" onclick="saveToNotion()" title="Downloads the SVG, copies a PNG to your clipboard and opens the Notion flowchart library">
     <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="display:inline;vertical-align:-2px;margin-right:5px"><rect x="1" y="1" width="12" height="12" rx="2" fill="white" opacity="0.9"/><path d="M3.5 3.5h4l3 3.5-3 3.5h-4v-7z" fill="#1B2B4B" opacity="0.7"/></svg>
     Save to Notion
   </button>
@@ -344,6 +428,14 @@
   <button class="mode-btn" id="btn-connect" onclick="setMode('connect')">&#10551; Connect <span class="kbd">C</span></button>
   <div class="sep"></div>
   <button class="mode-btn active" id="btn-snap" onclick="toggleSnap()" title="Snap tiles and lines to align with each other">&#128204; Snap <span class="kbd">G</span></button>
+  <div class="sep"></div>
+  <button class="mode-btn" id="btn-undo" onclick="undo()" title="Undo (Ctrl+Z)" disabled>&#8630; Undo</button>
+  <button class="mode-btn" id="btn-redo" onclick="redo()" title="Redo (Ctrl+Shift+Z)" disabled>&#8631; Redo</button>
+  <div class="sep"></div>
+  <button class="mode-btn" id="btn-tidy" onclick="autoLayout()" title="Auto-arrange tiles into a tidy top-to-bottom layout (undoable)">&#10024; Tidy <span class="kbd">L</span></button>
+  <div class="spacer"></div>
+  <span id="save-status" class="blank" onclick="statusClick()"></span>
+  <button class="mode-btn" onclick="openHelpModal()" title="Shortcuts &amp; settings (?)">?</button>
 </div>
 
 <div id="main-row">
@@ -355,14 +447,15 @@
     <div id="sidebar-header">
       <span>My Flowcharts</span>
       <div id="sidebar-actions">
+        <button class="sb-icon-btn sb-new" onclick="newFlowchart()" title="Start a new blank flowchart">+ New</button>
         <button class="sb-icon-btn" onclick="openNewFolderModal()" title="New folder">+ Folder</button>
       </div>
     </div>
-    <div id="sidebar-scroll">
-      <div class="sidebar-empty" id="sidebar-empty">
-        No flowcharts saved yet.<br>Save your canvas to a folder to keep your work.
-      </div>
+    <div id="sidebar-search">
+      <input id="fc-search" type="text" placeholder="Search flowcharts…" autocomplete="off">
+      <button id="fc-search-clear" title="Clear search">&times;</button>
     </div>
+    <div id="sidebar-scroll"></div>
     <div id="sidebar-bottom">
       <button class="sb-full-btn primary" onclick="openSaveModal()">💾 Save current canvas</button>
       <button class="sb-full-btn" onclick="triggerImportSVG()">📂 Import SVG to edit</button>
@@ -412,12 +505,40 @@
               stroke-dasharray="4,3" style="display:none; pointer-events:none"/>
       </g>
     </svg>
+    <!-- Inspector: options for the selected tile(s) / connector(s) -->
+    <div id="inspector">
+      <div id="insp-node">
+        <div class="insp-title" id="insp-node-title">Tile</div>
+        <div class="insp-label">Color</div>
+        <div class="swatches" id="tile-swatches"></div>
+        <div id="insp-node-single">
+          <div class="insp-label">Note <span class="insp-hint">(internal — not in exports)</span></div>
+          <textarea id="insp-note" rows="3" placeholder="Add a note for this step…"></textarea>
+          <div class="insp-label">Link</div>
+          <div class="insp-row"><input id="insp-link" placeholder="https://…"><button class="insp-btn" id="insp-open-link" title="Open link" style="flex:0 0 auto">&#8599;</button></div>
+        </div>
+        <div class="insp-row"><button class="insp-btn" onclick="duplicateSelection()">&#10697; Duplicate</button><button class="insp-btn danger" onclick="deleteSelected()">&#128465; Delete</button></div>
+      </div>
+      <div id="insp-edge">
+        <div class="insp-title" id="insp-edge-title">Connector</div>
+        <div class="insp-label">Line color</div>
+        <div class="swatches" id="edge-swatches"></div>
+        <div class="insp-label">Style</div>
+        <div class="insp-row" style="margin-top:0"><button class="insp-btn" id="edge-solid">&#8213; Solid</button><button class="insp-btn" id="edge-dashed">&#9548; Dashed</button></div>
+        <div id="insp-edge-single">
+          <div class="insp-label">Label</div>
+          <div class="insp-row" style="margin-top:0"><button class="insp-btn" data-lbl="Yes">Yes</button><button class="insp-btn" data-lbl="No">No</button><button class="insp-btn" data-lbl="">Clear</button></div>
+          <input id="insp-edge-label" placeholder="Custom label…" maxlength="60">
+        </div>
+        <div class="insp-row"><button class="insp-btn danger" onclick="deleteSelected()">&#128465; Delete connector</button></div>
+      </div>
+    </div>
     <!-- Zoom controls -->
     <div id="zoom-controls">
       <button class="zoom-btn" onclick="zoomStep(1.2)" title="Zoom in">+</button>
       <div id="zoom-label">100%</div>
       <button class="zoom-btn" onclick="zoomStep(1/1.2)" title="Zoom out">−</button>
-      <button class="zoom-btn" onclick="zoomReset()" title="Reset view" style="font-size:11px;">⌂</button>
+      <button class="zoom-btn" onclick="fitView()" title="Fit to content (Ctrl+0)" style="font-size:11px;">⌂</button>
     </div>
   </div>
 </div>
@@ -432,6 +553,7 @@
 <!-- ── Context menu ── -->
 <div id="ctx-menu">
   <div class="ctx-item" id="ctx-rename" onclick="ctxRename()">✏️ Rename</div>
+  <div class="ctx-item" id="ctx-dup" onclick="ctxDuplicate()">⧉ Duplicate</div>
   <div class="ctx-item" id="ctx-move" onclick="ctxMove()">📁 Move to folder</div>
   <div class="ctx-sep"></div>
   <div class="ctx-item danger" id="ctx-delete" onclick="ctxDelete()">🗑 Delete</div>
@@ -443,7 +565,8 @@
     <h3 id="modal-title">Save Flowchart</h3>
     <div id="modal-body"></div>
     <div id="modal-btns">
-      <button class="modal-btn cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn cancel" id="modal-cancel" onclick="closeModal()">Cancel</button>
+      <button class="modal-btn extra" id="modal-extra" onclick="modalExtra()" style="display:none"></button>
       <button class="modal-btn ok" id="modal-ok" onclick="modalOK()">Save</button>
     </div>
   </div>
@@ -461,6 +584,22 @@ const MIN_W={step:80,action:80,terminal:80,decision:100};
 const MIN_H={step:36,action:36,terminal:32,decision:60};
 const LS_KEY='banner_flowcharts_v1';
 const LS_DRAFT='banner_flowchart_draft_v1';
+const CLIP_KEY='banner_fc_clipboard_v1';
+const NOTION_DB_URL='https://app.notion.com/p/73b895456021436981e354dfa3916bef';
+
+// Tile colour tags (fill + border)
+const TILE_COLORS={
+  default:null,
+  red:   {fill:'#FEF2F2',stroke:'#FCA5A5',label:'Red'},
+  orange:{fill:'#FFF7ED',stroke:'#FDBA74',label:'Orange'},
+  yellow:{fill:'#FFFBEB',stroke:'#FCD34D',label:'Yellow'},
+  green: {fill:'#F0FDF4',stroke:'#86EFAC',label:'Green'},
+  blue:  {fill:'#EFF6FF',stroke:'#93C5FD',label:'Blue'},
+  purple:{fill:'#F5F3FF',stroke:'#C4B5FD',label:'Purple'},
+  gray:  {fill:'#F3F4F6',stroke:'#9CA3AF',label:'Gray'}
+};
+// Connector line colours
+const EDGE_COLORS={gray:'#6B7280',green:'#16A34A',red:'#DC2626',blue:'#2563EB',orange:'#EA580C',purple:'#7C3AED'};
 
 // ── Safe localStorage wrapper (some sandboxes block it entirely) ──────────────
 const LS = (()=>{
@@ -477,6 +616,10 @@ let drag=null, resize=null, conn=null, snapPort=null, selBox=null, freehand=null
 let editingNodeId=null;
 let currentFlowchartId=null;
 let snapEnabled=true;
+let _restoring=false,_batchDepth=0,_batchDirty=false,_pendingSave=false,_lastDragMoved=false;
+let history_=[],histIdx=-1;
+let clipboardData=null;
+const closedFolders=new Set();
 const SNAP_GRID=24; // matches dot-grid spacing
 
 // ── Pan/zoom state ────────────────────────────────────────────────────────────
@@ -624,7 +767,7 @@ function setback(x1,y1,x2,y2,amt){
 }
 
 // ── Rounded orthogonal path ───────────────────────────────────────────────────
-function straightPath(x1,y1,x2,y2,fp,tp){
+function routePts(x1,y1,x2,y2,fp,tp){
   const fv=fp==='n'||fp==='s', tv=tp==='n'||tp==='s';
   let pts;
   if(Math.abs(y1-y2)<2&&!fv&&!tv) pts=[[x1,y1],[x2,y2]];
@@ -633,7 +776,24 @@ function straightPath(x1,y1,x2,y2,fp,tp){
   else if(!fv&&!tv){const mx=(x1+x2)/2;pts=[[x1,y1],[mx,y1],[mx,y2],[x2,y2]];}
   else if(fv) pts=[[x1,y1],[x1,y2],[x2,y2]];
   else        pts=[[x1,y1],[x2,y1],[x2,y2]];
-
+  return pts;
+}
+// Point halfway along a polyline (by length) — where a connector's label sits
+function polylineMid(pts){
+  const segs=[];let total=0;
+  for(let i=0;i<pts.length-1;i++){const l=Math.hypot(pts[i+1][0]-pts[i][0],pts[i+1][1]-pts[i][1]);segs.push(l);total+=l;}
+  let half=total/2;
+  for(let i=0;i<segs.length;i++){
+    if(half<=segs[i]){
+      const t=segs[i]?half/segs[i]:0;
+      return{x:pts[i][0]+(pts[i+1][0]-pts[i][0])*t,y:pts[i][1]+(pts[i+1][1]-pts[i][1])*t};
+    }
+    half-=segs[i];
+  }
+  return{x:pts[0][0],y:pts[0][1]};
+}
+function straightPath(x1,y1,x2,y2,fp,tp){
+  const pts=routePts(x1,y1,x2,y2,fp,tp);
   const last=pts.length-1,prev=pts[last-1],end=pts[last];
   const sb=setback(prev[0],prev[1],end[0],end[1],SETBACK);
   pts[last]=[sb.x,sb.y];
@@ -742,26 +902,47 @@ function showSnapGuides(guideX,guideY){
 function selectNode(id,additive=false){
   if(!additive)deselectAll();
   if(id){selected.add(id);highlightNode(id,true);nodes[id]?.g.classList.add('selected');}
+  requestInspectorUpdate();
 }
 function deselectAll(){
   selected.forEach(id=>{highlightNode(id,false);nodes[id]?.g.classList.remove('selected');});
   selected.clear();
   selectedEdges.forEach(id=>highlightEdge(id,false));
   selectedEdges.clear();
+  requestInspectorUpdate();
+}
+// Arrowheads are SVG markers, so each connector colour needs its own marker
+function arrowId(color){
+  if(!color||color==='#6B7280')return 'arrow';
+  const id='arrow-'+color.replace('#','');
+  if(!document.getElementById(id)){
+    const defs=mainSvg.querySelector('defs');
+    const m=svgEl('marker',{id,markerWidth:8,markerHeight:6,refX:7,refY:3,orient:'auto',markerUnits:'strokeWidth'});
+    m.appendChild(svgEl('polygon',{points:'0 0, 8 3, 0 6',fill:color}));
+    defs.appendChild(m);
+  }
+  return id;
+}
+function paintEdge(e,sel){
+  e.pathEl.setAttribute('stroke',sel?'#E8503A':(e.color||'#6B7280'));
+  e.pathEl.setAttribute('stroke-width',sel?'2.5':'2');
+  e.pathEl.setAttribute('marker-end',`url(#${sel?'arrow-sel':arrowId(e.color)})`);
+  if(e.dashed)e.pathEl.setAttribute('stroke-dasharray','7,6');
+  else e.pathEl.removeAttribute('stroke-dasharray');
 }
 function highlightEdge(id,on){
   const e=edges.find(e=>e.id===id);if(!e)return;
-  e.pathEl.setAttribute('stroke',on?'#E8503A':'#6B7280');
-  e.pathEl.setAttribute('stroke-width',on?'2.5':'2');
-  e.pathEl.setAttribute('marker-end',on?'url(#arrow-sel)':'url(#arrow)');
+  paintEdge(e,on);
 }
 function highlightNode(id,on){
   const n=nodes[id];if(!n)return;
   if(on){n.bodyEl.setAttribute('stroke','#E8503A');n.bodyEl.setAttribute('stroke-width','2.5');}
-  else  {n.bodyEl.setAttribute('stroke',shapeStroke(n.shape));n.bodyEl.setAttribute('stroke-width','1.5');}
+  else  {n.bodyEl.setAttribute('stroke',nodeStroke(n));n.bodyEl.setAttribute('stroke-width','1.5');}
 }
 function shapeStroke(s){return{step:'#D1D5DB',decision:'#FCD34D',terminal:'#86EFAC',action:'#93C5FD'}[s]||'#D1D5DB';}
 function shapeFill(s){return{step:'#ffffff',decision:'#FFFBEB',terminal:'#F0FDF4',action:'#EFF6FF'}[s]||'#fff';}
+function nodeFill(n){const c=TILE_COLORS[n.color];return c?c.fill:shapeFill(n.shape);}
+function nodeStroke(n){const c=TILE_COLORS[n.color];return c?c.stroke:shapeStroke(n.shape);}
 
 // ── Update node geometry (resize) ─────────────────────────────────────────────
 function updateNodeGeometry(id){
@@ -779,6 +960,7 @@ function updateNodeGeometry(id){
   });
   if(resizeEl){resizeEl.setAttribute('x',w-14);resizeEl.setAttribute('y',h-14);}
   refreshTextEl(id);
+  updateNodeBadge(id);
 }
 
 // ── Add node ──────────────────────────────────────────────────────────────────
@@ -854,9 +1036,9 @@ function addNode(shape,x,y,label,fixedId){
 
   g.setAttribute('transform',`translate(${x},${y})`);
   nodesG.appendChild(g);
-  nodes[id]={id,shape,x,y,w,h,label,g,bodyEl,textEl,portEls,resizeEl};
+  nodes[id]={id,shape,x,y,w,h,label,g,bodyEl,textEl,portEls,resizeEl,color:null,note:'',link:'',badgeEl:null};
   updateStatus();
-  scheduleDraftSave();
+  markChanged();
   return id;
 }
 
@@ -891,8 +1073,14 @@ function closeNodeEdit(){
     if(n.textEl)n.textEl.style.display='';
     refreshTextEl(id);
     redrawEdges();
-    scheduleDraftSave();
+    markChanged();
   }
+  nodeEditTa.style.display='none';
+  nodeEditTa.value='';
+}
+// Drop an in-progress label edit without saving it (used when the canvas is replaced)
+function abortNodeEdit(){
+  editingNodeId=null;
   nodeEditTa.style.display='none';
   nodeEditTa.value='';
 }
@@ -916,9 +1104,10 @@ function onNodeMousedown(e){
   if(mode!=='select')return;
   e.stopPropagation();
   closeNodeEdit();
+  _lastDragMoved=false;
   const id=e.currentTarget.dataset.id;
   if(e.shiftKey){
-    if(selected.has(id)){selected.delete(id);highlightNode(id,false);nodes[id]?.g.classList.remove('selected');}
+    if(selected.has(id)){selected.delete(id);highlightNode(id,false);nodes[id]?.g.classList.remove('selected');requestInspectorUpdate();}
     else selectNode(id,true);
     return;
   }
@@ -1001,6 +1190,7 @@ document.addEventListener('mousemove',e=>{
 
   if(drag){
     let dx=pt.x-drag.startPt.x,dy=pt.y-drag.startPt.y;
+    if(Math.hypot(dx,dy)>3)drag.moved=true;
     // Shift temporarily disables snapping, the opposite of the global toggle
     const useSnap=snapEnabled!==e.shiftKey;
     if(useSnap){
@@ -1068,8 +1258,8 @@ document.addEventListener('mousemove',e=>{
 document.addEventListener('mouseup',e=>{
   if(isPanning){isPanning=false;panStart=null;wrap.classList.remove('panning');return;}
   const pt=c2w(e.clientX,e.clientY);
-  if(resize){resize=null;scheduleDraftSave();return;}
-  if(drag){drag=null;hideSnapGuides();scheduleDraftSave();return;}
+  if(resize){resize=null;markChanged();return;}
+  if(drag){_lastDragMoved=!!drag.moved;drag=null;hideSnapGuides();markChanged();return;}
   if(selBox){selBox=null;selBoxEl.style.display='none';return;}
   if(conn){
     clearSnapHighlight();
@@ -1084,28 +1274,37 @@ document.addEventListener('mouseup',e=>{
 });
 
 // ── Connection helpers ────────────────────────────────────────────────────────
-function finishConn(toId,toPort,fixedId,fixedLabel){
-  if(!conn)return;
-  const dup=edges.find(e=>e.from===conn.fromId&&e.fromPort===conn.fromPort&&e.to===toId&&e.toPort===toPort);
-  if(dup)return;
-  const id=fixedId||'e'+(++edgeCounter);
+function createEdge(fromId,fromPort,toId,toPort,opts){
+  opts=opts||{};
+  if(!nodes[fromId]||!nodes[toId])return null;
+  if(edges.find(e=>e.from===fromId&&e.fromPort===fromPort&&e.to===toId&&e.toPort===toPort))return null;
+  const id=opts.id||'e'+(++edgeCounter);
   // Always keep counter ahead of any id used (whether fixed or generated)
   const eNum=parseInt((id||'').replace(/\D+/,''))||0;
   if(eNum>edgeCounter)edgeCounter=eNum;
-  const pathEl=svgEl('path',{stroke:'#6B7280','stroke-width':'2',fill:'none','marker-end':'url(#arrow)',style:'cursor:pointer;','stroke-linecap':'round'});
+  const color=opts.color||null;
+  const pathEl=svgEl('path',{stroke:color||'#6B7280','stroke-width':'2',fill:'none','marker-end':`url(#${arrowId(color)})`,style:'cursor:pointer;','stroke-linecap':'round'});
+  if(opts.dashed)pathEl.setAttribute('stroke-dasharray','7,6');
   const hitEl=svgEl('path',{stroke:'transparent','stroke-width':'12',fill:'none',style:'cursor:pointer;'});
   hitEl.dataset.edgeId=id;hitEl.addEventListener('click',onEdgeClick);
   pathEl.dataset.edgeId=id;pathEl.addEventListener('click',onEdgeClick);
   edgesG.appendChild(pathEl);edgesG.appendChild(hitEl);
   const labelG=svgEl('g',{class:'edge-label-g','data-edge-id':id});
   const labelBg=svgEl('rect',{class:'edge-label-bg',rx:3,fill:'#fff',stroke:'#e0e0e0','stroke-width':'1'});
-  const labelTx=svgEl('text',{class:'edge-label-text','text-anchor':'middle','dominant-baseline':'middle'});
+  const labelTx=svgEl('text',{class:'edge-label-text','text-anchor':'middle','dominant-baseline':'middle',
+    'font-family':'Inter,system-ui,sans-serif','font-size':11,fill:'#555'});
   labelG.appendChild(labelBg);labelG.appendChild(labelTx);
   labelG.style.display='none';
   edgesG.appendChild(labelG);
-  const edge={id,from:conn.fromId,fromPort:conn.fromPort,to:toId,toPort,label:fixedLabel||'',pathEl,hitEl,labelG,labelBg,labelTx};
+  const edge={id,from:fromId,fromPort,to:toId,toPort,label:opts.label||'',color,dashed:!!opts.dashed,pathEl,hitEl,labelG,labelBg,labelTx};
   edges.push(edge);redrawEdge(edge);updateStatus();
-  scheduleDraftSave();
+  markChanged();
+  return edge;
+}
+// Connect from the active drag (conn) to a target port
+function finishConn(toId,toPort,fixedId,fixedLabel){
+  if(!conn)return;
+  createEdge(conn.fromId,conn.fromPort,toId,toPort,{id:fixedId,label:fixedLabel});
 }
 
 function finishFreehand(pts,endPt){
@@ -1184,7 +1383,8 @@ function redrawEdge(edge){
   edge.pathEl.setAttribute('d',d);
   if(edge.hitEl)edge.hitEl.setAttribute('d',d);
   if(edge.label){
-    const mx=(p1.x+p2.x)/2,my=(p1.y+p2.y)/2;
+    const mid=polylineMid(routePts(p1.x,p1.y,p2.x,p2.y,edge.fromPort,edge.toPort));
+    const mx=mid.x,my=mid.y;
     edge.labelTx.textContent=edge.label;
     const tw=edge.label.length*6.2+10, th=16;
     edge.labelBg.setAttribute('x',(mx-tw/2).toFixed(1));
@@ -1201,7 +1401,14 @@ function redrawEdges(){edges.forEach(redrawEdge);}
 function onEdgeClick(e){
   e.stopPropagation();
   const edge=edges.find(ed=>ed.id===e.currentTarget.dataset.edgeId);if(!edge)return;
+  if(e.shiftKey){
+    if(selectedEdges.has(edge.id)){selectedEdges.delete(edge.id);highlightEdge(edge.id,false);}
+    else{selectedEdges.add(edge.id);highlightEdge(edge.id,true);}
+    requestInspectorUpdate();
+    return;
+  }
   deselectAll();selectedEdges.add(edge.id);highlightEdge(edge.id,true);
+  requestInspectorUpdate();
   if(e.detail===2){
     const inp=document.getElementById('edge-label-input');
     inp.value=edge.label;inp.style.display='block';
@@ -1209,46 +1416,19 @@ function onEdgeClick(e){
     // position in screen space (stays at click point regardless of zoom)
     inp.style.left=(e.clientX-wr.left-40)+'px';inp.style.top=(e.clientY-wr.top-14)+'px';
     inp.focus();inp.select();
-    const commit=()=>{edge.label=inp.value.trim();inp.style.display='none';redrawEdge(edge);scheduleDraftSave();};
+    let done=false;
+    const commit=()=>{
+      if(done)return;done=true;
+      edge.label=inp.value.trim();inp.style.display='none';redrawEdge(edge);markChanged();requestInspectorUpdate();
+    };
     inp.onkeydown=ev=>{
       if(ev.key==='Enter'){commit();}
-      if(ev.key==='Escape')inp.style.display='none';
+      if(ev.key==='Escape'){done=true;inp.style.display='none';}
       ev.stopPropagation();
     };
     inp.onblur=commit;
   }
 }
-
-// ── Keyboard ──────────────────────────────────────────────────────────────────
-let spaceDown=false;
-document.addEventListener('keydown',e=>{
-  if(e.target.tagName==='INPUT'||e.target.tagName==='TEXTAREA')return;
-  if(e.key===' '&&!spaceDown){spaceDown=true;wrap.style.cursor='grab';e.preventDefault();return;}
-  if(e.key==='v'||e.key==='V')setMode('select');
-  if(e.key==='c'||e.key==='C')setMode('connect');
-  if(e.key==='s'||e.key==='S')addNode('step');
-  if(e.key==='d'||e.key==='D')addNode('decision');
-  if(e.key==='t'||e.key==='T')addNode('terminal');
-  if(e.key==='a'||e.key==='A')addNode('action');
-  if(e.key==='g'||e.key==='G')toggleSnap();
-  if(e.key==='Delete'||e.key==='Backspace')deleteSelected();
-  if(e.key==='Escape'){cancelConn();cancelFreehand();deselectAll();}
-  if((e.key==='0')&&(e.ctrlKey||e.metaKey)){e.preventDefault();zoomReset();}
-  if((e.key==='='||e.key==='+')&&(e.ctrlKey||e.metaKey)){e.preventDefault();zoomStep(1.2);}
-  if(e.key==='-'&&(e.ctrlKey||e.metaKey)){e.preventDefault();zoomStep(1/1.2);}
-});
-document.addEventListener('keyup',e=>{
-  if(e.key===' '){spaceDown=false;wrap.style.cursor='';if(!mode||mode==='connect')wrap.style.cursor='crosshair';}
-});
-// Space+drag panning
-wrap.addEventListener('mousedown',e=>{
-  if(spaceDown&&e.button===0){
-    e.preventDefault();e.stopPropagation();
-    isPanning=true;
-    panStart={x:e.clientX-panX, y:e.clientY-panY};
-    wrap.classList.add('panning');
-  }
-},true);
 
 function deleteSelected(){
   if(!selected.size&&!selectedEdges.size)return;
@@ -1264,7 +1444,7 @@ function deleteSelected(){
     });
     nodes[id]?.g.remove();delete nodes[id];
   });
-  selected.clear();updateStatus();scheduleDraftSave();
+  selected.clear();updateStatus();markChanged();requestInspectorUpdate();
 }
 
 function updateStatus(){
@@ -1275,62 +1455,13 @@ function updateStatus(){
 }
 
 // ── Clear ─────────────────────────────────────────────────────────────────────
-function clearCanvas(skipConfirm){
-  if(!skipConfirm&&Object.keys(nodes).length>0&&!confirm('Clear canvas?'))return;
-  closeNodeEdit();
-  Object.values(nodes).forEach(n=>n.g.remove());
-  nodes={};selected.clear();
-  edges.forEach(e=>{e.pathEl.remove();e.hitEl?.remove();e.labelG?.remove();});
-  edges=[];nodeCounter=0;edgeCounter=0;
-  currentFlowchartId=null;
+function clearCanvas(){
+  wipeCanvas();
+  currentFlowchartId=null; // a cleared canvas no longer belongs to any saved flowchart
   updateStatus();
+  updateInspector();
   renderSidebar();
-}
-
-// ── Export SVG ────────────────────────────────────────────────────────────────
-function exportSVG(){
-  if(!Object.keys(nodes).length){showToast('Add nodes first.','warn');return false;}
-  closeNodeEdit();
-  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
-  Object.values(nodes).forEach(n=>{
-    minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);
-    maxX=Math.max(maxX,n.x+n.w);maxY=Math.max(maxY,n.y+n.h);
-  });
-  const pad=40;minX-=pad;minY-=pad;maxX+=pad;maxY+=pad;
-  const W=maxX-minX,H=maxY-minY;
-  const clone=mainSvg.cloneNode(true);
-  clone.setAttribute('width',W);clone.setAttribute('height',H);
-  clone.setAttribute('viewBox',`${minX} ${minY} ${W} ${H}`);
-  clone.querySelectorAll('#preview-line,#freehand-path,.port,.resize-handle').forEach(el=>el.remove());
-  clone.querySelectorAll('path[stroke="transparent"]').forEach(el=>el.remove());
-  clone.querySelectorAll('.edge-label-g').forEach(el=>{
-    if(el.style.display==='none')el.remove();
-    else el.removeAttribute('style');
-  });
-  clone.querySelectorAll('[style]').forEach(el=>{
-    const s=el.getAttribute('style')||'';
-    if(s.includes('display:none')){el.remove();return;}
-    el.removeAttribute('style');
-  });
-  clone.querySelectorAll('text').forEach(el=>el.removeAttribute('style'));
-  clone.querySelectorAll('[stroke="#E8503A"]').forEach(el=>{
-    const id=el.closest('[data-shape]')?.dataset.shape;
-    const strokes={step:'#D1D5DB',decision:'#FCD34D',terminal:'#86EFAC',action:'#93C5FD'};
-    if(id)el.setAttribute('stroke',strokes[id]||'#D1D5DB');
-    el.setAttribute('stroke-width','1.5');
-  });
-  const blob=new Blob(['<?xml version="1.0" encoding="UTF-8"?>',clone.outerHTML],{type:'image/svg+xml'});
-  const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='flowchart.svg';a.click();
-  URL.revokeObjectURL(url);
-  return true;
-}
-
-// ── Save to Notion ────────────────────────────────────────────────────────────
-const NOTION_DB_URL='https://app.notion.com/p/73b895456021436981e354dfa3916bef';
-function saveToNotion(){
-  if(!exportSVG())return;
-  setTimeout(()=>window.open(NOTION_DB_URL,'_blank'),400);
+  updateSaveStatus();
 }
 
 // ── Toast ─────────────────────────────────────────────────────────────────────
@@ -1390,20 +1521,22 @@ document.getElementById('collection-import-input')?.addEventListener('change',fu
       try{
         const data=JSON.parse(e.target.result);
         if(!data||!data.folders)throw new Error('Invalid backup file');
-        if(!confirm('This will merge the backup with your current saves. Continue?'))return;
-        // Merge folders
-        Object.entries(data.folders).forEach(([fid,folder])=>{
-          if(!collection.folders[fid]){
-            collection.folders[fid]=folder;
-          } else {
-            // Merge flowcharts within folder
-            Object.entries(folder.flowcharts||{}).forEach(([fcid,fc])=>{
-              collection.folders[fid].flowcharts[fcid]=fc;
+        askConfirm('Restore backup?',
+          'This merges the backup into your current saves. Flowcharts with the same ID are replaced by the backup copy.',
+          'Merge',
+          ()=>{
+            Object.entries(data.folders).forEach(([fid,folder])=>{
+              if(!collection.folders[fid]){
+                collection.folders[fid]=folder;
+              } else {
+                const dest=collection.folders[fid];
+                if(!dest.flowcharts)dest.flowcharts={};
+                Object.entries(folder.flowcharts||{}).forEach(([fcid,fc])=>{ dest.flowcharts[fcid]=fc; });
+              }
             });
-          }
-        });
-        saveCollection(); renderSidebar();
-        showToast('Saves imported successfully','ok');
+            saveCollection(); renderSidebar(); updateSaveStatus();
+            showToast('Saves imported successfully','ok');
+          },false);
       }catch(err){
         showToast('Could not read backup: '+err.message,'warn');
       }
@@ -1411,112 +1544,248 @@ document.getElementById('collection-import-input')?.addEventListener('change',fu
     reader.readAsText(file);
 });
 
+// ── Serialise / restore ───────────────────────────────────────────────────────
+function nodeToData(n){
+  const d={id:n.id,shape:n.shape,x:n.x,y:n.y,w:n.w,h:n.h,label:n.label};
+  if(n.color)d.color=n.color;
+  if(n.note)d.note=n.note;
+  if(n.link)d.link=n.link;
+  return d;
+}
+function edgeToData(e){
+  const d={id:e.id,from:e.from,fromPort:e.fromPort,to:e.to,toPort:e.toPort,label:e.label};
+  if(e.color)d.color=e.color;
+  if(e.dashed)d.dashed=true;
+  return d;
+}
+
 // Serialise current canvas to a plain JSON object
 function serialiseCanvas(){
   const ns={};
-  Object.values(nodes).forEach(n=>{
-    ns[n.id]={id:n.id,shape:n.shape,x:n.x,y:n.y,w:n.w,h:n.h,label:n.label};
-  });
-  const es=edges.map(e=>({id:e.id,from:e.from,fromPort:e.fromPort,to:e.to,toPort:e.toPort,label:e.label}));
-  return{nodes:ns,edges:es,nodeCounter,edgeCounter};
+  Object.values(nodes).forEach(n=>{ ns[n.id]=nodeToData(n); });
+  return{nodes:ns,edges:edges.map(edgeToData),nodeCounter,edgeCounter};
 }
 
-// Load a serialised canvas object onto the canvas
-function deserialiseCanvas(data){
+function applyNodeData(id,d){
+  const n=nodes[id];if(!n)return;
+  if(d.w&&d.h&&(n.w!==d.w||n.h!==d.h)){ n.w=d.w; n.h=d.h; updateNodeGeometry(id); }
+  n.color=(d.color&&TILE_COLORS[d.color])?d.color:null;
+  n.note=d.note||'';
+  n.link=d.link||'';
+  applyNodeStyle(id);
+}
+
+// Remove everything from the canvas (no history / persistence side effects)
+function wipeCanvas(){
+  abortNodeEdit();
+  Object.values(nodes).forEach(n=>n.g.remove());
+  nodes={};selected.clear();selectedEdges.clear();
+  edges.forEach(e=>{e.pathEl.remove();e.hitEl?.remove();e.labelG?.remove();});
+  edges=[];nodeCounter=0;edgeCounter=0;
+}
+
+// Replace the canvas with a serialised snapshot. Empty snapshots are allowed.
+// Keeps currentFlowchartId untouched (used by undo/redo and by loading).
+function applySnapshot(data){
+  if(!data||typeof data!=='object'||!data.nodes)return false;
+  _restoring=true;
   try{
-    if(!data||!data.nodes)return false;
-    if(!Object.keys(data.nodes).length)return false;
-    clearTimeout(_draftTimer); // prevent pending save from clobbering what we're about to load
-    clearCanvas(true);
+    clearTimeout(_draftTimer);
+    wipeCanvas();
     nodeCounter=data.nodeCounter||0;
     edgeCounter=data.edgeCounter||0;
-    Object.values(data.nodes).forEach(n=>{
-      if(!n.shape||n.x==null||n.y==null)return;
-      addNode(n.shape,n.x,n.y,n.label||'',n.id);
-      const nd=nodes[n.id];
-      if(nd&&(nd.w!==n.w||nd.h!==n.h)){
-        nd.w=n.w||nd.w; nd.h=n.h||nd.h;
-        updateNodeGeometry(n.id);
-      }
+    Object.values(data.nodes).forEach(d=>{
+      if(!d||!d.shape||d.x==null||d.y==null)return;
+      const id=addNode(d.shape,d.x,d.y,d.label||'',d.id);
+      applyNodeData(id,d);
     });
     (data.edges||[]).forEach(e=>{
-      if(!e.from||!e.to)return;
-      conn={fromId:e.from,fromPort:e.fromPort||'s'};
-      finishConn(e.to,e.toPort||'n',e.id,e.label||'');
-      conn=null;
+      if(!e||!e.from||!e.to)return;
+      createEdge(e.from,e.fromPort||'s',e.to,e.toPort||'n',{id:e.id,label:e.label,color:e.color,dashed:e.dashed});
     });
     redrawEdges();
     updateStatus();
-    return Object.keys(nodes).length>0;
+    updateInspector();
+    return true;
   }catch(err){
-    console.error('deserialiseCanvas error:',err);
+    console.error('applySnapshot error:',err);
     return false;
+  }finally{
+    _restoring=false;
   }
 }
 
-// Draft auto-save (debounced)
-let _draftTimer=null;
-function scheduleDraftSave(){
-  clearTimeout(_draftTimer);
-  _draftTimer=setTimeout(()=>{
-    if(!Object.keys(nodes).length)return;
-    try{ LS.setItem(LS_DRAFT,JSON.stringify(serialiseCanvas())); }
-    catch(e){}
-    // If we have an active flowchart, also update it in its folder
-    if(currentFlowchartId){
-      for(const fid of Object.keys(collection.folders)){
-        const f=collection.folders[fid];
-        if(f.flowcharts&&f.flowcharts[currentFlowchartId]){
-          f.flowcharts[currentFlowchartId].data=serialiseCanvas();
-          saveCollection();
-          flashSaved();
-          break;
-        }
-      }
-    }
-  },800);
+// ── Undo / redo (snapshot history) ───────────────────────────────────────────
+function snapStr(){ return JSON.stringify(serialiseCanvas()); }
+function resetHistory(){ history_=[snapStr()]; histIdx=0; updateUndoButtons(); }
+function recordHistory(){
+  if(_restoring)return;
+  const s=snapStr();
+  if(history_[histIdx]===s)return;
+  history_=history_.slice(0,histIdx+1);
+  history_.push(s);
+  if(history_.length>150)history_.shift();
+  histIdx=history_.length-1;
+  updateUndoButtons();
+}
+function updateUndoButtons(){
+  const u=document.getElementById('btn-undo'),r=document.getElementById('btn-redo');
+  if(u)u.disabled=histIdx<=0;
+  if(r)r.disabled=histIdx>=history_.length-1;
+}
+function undo(){ if(histIdx<=0)return; histIdx--; stepHistory('Undo'); }
+function redo(){ if(histIdx>=history_.length-1)return; histIdx++; stepHistory('Redo'); }
+function stepHistory(label){
+  cancelConn();cancelFreehand();
+  if(!applySnapshot(JSON.parse(history_[histIdx])))return;
+  scheduleDraftSave();
+  updateUndoButtons();
+  showToast(label,'ok');
 }
 
-// Restore draft on load
+// Called after every committed change: records an undo step + schedules auto-save
+function markChanged(){
+  if(_restoring)return;
+  if(_batchDepth>0){_batchDirty=true;return;}
+  recordHistory();
+  scheduleDraftSave();
+}
+function batch(fn){
+  _batchDepth++;
+  try{fn();}finally{_batchDepth--;}
+  if(_batchDepth===0&&_batchDirty){_batchDirty=false;markChanged();}
+}
+
+// ── Draft / auto-save ────────────────────────────────────────────────────────
+let _draftTimer=null;
+
+// Returns {fid,folder,fc} for the open saved flowchart, or null for an unsaved draft
+function currentFlowchartInfo(){
+  if(!currentFlowchartId)return null;
+  for(const fid of Object.keys(collection.folders)){
+    const folder=collection.folders[fid];
+    const fc=folder.flowcharts&&folder.flowcharts[currentFlowchartId];
+    if(fc)return{fid,folder,fc};
+  }
+  return null;
+}
+
+function scheduleDraftSave(){
+  if(_restoring)return;
+  clearTimeout(_draftTimer);
+  _pendingSave=true;
+  updateSaveStatus();
+  _draftTimer=setTimeout(persistNow,800);
+}
+
+// Write the canvas to the draft slot and, if it belongs to a saved flowchart, to its folder entry
+function persistNow(){
+  clearTimeout(_draftTimer);
+  _pendingSave=false;
+  let info=currentFlowchartInfo();
+  if(currentFlowchartId&&!info)currentFlowchartId=null; // its saved copy was deleted
+  const data=serialiseCanvas();
+  const empty=!Object.keys(nodes).length;
+  try{
+    LS.setItem(LS_DRAFT,JSON.stringify(empty&&!info
+      ? {nodes:{},edges:[],blank:true}
+      : Object.assign({},data,{fcid:info?currentFlowchartId:null})));
+  }catch(e){}
+  if(info){ info.fc.data=data; saveCollection(); flashSaved(); }
+  updateSaveStatus();
+}
+
+// Restore draft on load (and re-attach it to its saved flowchart if it had one)
 function restoreDraft(){
   try{
     const raw=LS.getItem(LS_DRAFT);
-    if(raw){
-      const data=JSON.parse(raw);
-      if(data&&Object.keys(data.nodes||{}).length>0){
-        deserialiseCanvas(data);
-        showToast('Draft restored from last session','ok');
+    if(!raw)return;
+    const data=JSON.parse(raw);
+    if(!data||data.blank)return;
+    if(Object.keys(data.nodes||{}).length>0&&applySnapshot(data)){
+      if(data.fcid){
+        for(const f of Object.values(collection.folders)){
+          if(f.flowcharts&&f.flowcharts[data.fcid]){currentFlowchartId=data.fcid;break;}
+        }
       }
+      fitView();
+      showToast(currentFlowchartId?'Reopened your last flowchart':'Draft restored from last session','ok');
     }
   }catch(e){}
 }
+
+function updateSaveStatus(){
+  const el=document.getElementById('save-status');
+  const info=currentFlowchartInfo();
+  const has=Object.keys(nodes).length>0;
+  let txt,cls,title='';
+  if(info){
+    txt=_pendingSave?'Saving…':`✓ Saved · ${info.folder.name} / ${info.fc.name}`;
+    cls=_pendingSave?'saving':'saved';
+    title='Changes to this flowchart are saved automatically';
+    document.title=`${info.fc.name} – Banner Flowchart Builder`;
+  }else if(has){
+    txt='⚠ Not saved to a folder — click to save';
+    cls='unsaved';
+    title='This canvas is only a local draft. Click to save it to a folder.';
+    document.title='Banner Flowchart Builder';
+  }else{
+    txt='Blank canvas';
+    cls='blank';
+    document.title='Banner Flowchart Builder';
+  }
+  if(el){el.textContent=txt;el.className=cls;el.title=title;}
+}
+function statusClick(){ if(!currentFlowchartInfo()&&Object.keys(nodes).length)openSaveModal(); }
+
+// Warn before closing the tab with a canvas that was never saved to a folder
+window.addEventListener('beforeunload',e=>{
+  if(_pendingSave)persistNow();
+  if(Object.keys(nodes).length&&!currentFlowchartInfo()){
+    e.preventDefault();
+    e.returnValue='';
+    return '';
+  }
+});
 
 // ══════════════════════════════════════════════════════════════════════════════
 // ── Sidebar / Folder management ───────────────────────────────────────────────
 // ══════════════════════════════════════════════════════════════════════════════
 
 function uid(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+function escH(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
 
 function renderSidebar(){
   const scroll=document.getElementById('sidebar-scroll');
-  const empty=document.getElementById('sidebar-empty');
   if(!scroll)return;
+  const q=(document.getElementById('fc-search')?.value||'').trim().toLowerCase();
+  const clr=document.getElementById('fc-search-clear');
+  if(clr)clr.style.display=q?'block':'none';
+  scroll.innerHTML='';
   const folderIds=Object.keys(collection.folders);
 
   if(!folderIds.length){
-    scroll.innerHTML='';
-    if(empty){scroll.appendChild(empty);empty.style.display='block';}
+    const empty=document.createElement('div');
+    empty.className='sidebar-empty';
+    empty.innerHTML='No flowcharts saved yet.<br>Save your canvas to a folder to keep your work.';
+    scroll.appendChild(empty);
     return;
   }
-  if(empty)empty.style.display='none';
-  scroll.innerHTML='';
 
+  let shown=0;
   folderIds.forEach(fid=>{
     const folder=collection.folders[fid];
-    const fcIds=Object.keys(folder.flowcharts||{});
+    if(!folder.flowcharts)folder.flowcharts={};
+    const all=Object.keys(folder.flowcharts);
+    const folderMatch=q&&(folder.name||'').toLowerCase().includes(q);
+    const fcIds=(q&&!folderMatch)
+      ? all.filter(id=>(folder.flowcharts[id].name||'').toLowerCase().includes(q))
+      : all;
+    if(q&&!fcIds.length)return;
+    shown++;
 
     const group=document.createElement('div');
-    group.className='folder-group open';
+    group.className='folder-group'+((q||!closedFolders.has(fid))?' open':'');
     group.dataset.fid=fid;
 
     const header=document.createElement('div');
@@ -1529,7 +1798,8 @@ function renderSidebar(){
     `;
     header.addEventListener('click',e=>{
       if(e.target.classList.contains('folder-menu-btn'))return;
-      group.classList.toggle('open');
+      const nowOpen=group.classList.toggle('open');
+      if(nowOpen)closedFolders.delete(fid); else closedFolders.add(fid);
     });
     header.querySelector('.folder-menu-btn').addEventListener('click',e=>{
       e.stopPropagation();
@@ -1547,16 +1817,24 @@ function renderSidebar(){
       item.innerHTML=`
         <span class="fc-item-name" title="${escH(fc.name)}">${escH(fc.name)}</span>
         <span class="fc-item-actions">
-          <button class="fc-item-btn" title="Options" data-fcid="${fcid}" data-fid="${fid}">⋯</button>
+          <button class="fc-item-btn" data-act="rename" title="Rename">✏️</button>
+          <button class="fc-item-btn" data-act="dup" title="Duplicate">⧉</button>
+          <button class="fc-item-btn" data-act="del" title="Delete">🗑</button>
+          <button class="fc-item-btn" data-act="more" title="More (move to folder…)">⋯</button>
         </span>
       `;
       item.addEventListener('click',e=>{
-        if(e.target.classList.contains('fc-item-btn'))return;
+        const btn=e.target.closest('.fc-item-btn');
+        if(btn){
+          e.stopPropagation();
+          const act=btn.dataset.act;
+          if(act==='rename')ctxRename({type:'fc',fid,fcid});
+          else if(act==='dup')duplicateFlowchart(fid,fcid);
+          else if(act==='del')ctxDelete({type:'fc',fid,fcid});
+          else openCtxMenu(e,{type:'fc',fid,fcid});
+          return;
+        }
         loadFlowchart(fid,fcid);
-      });
-      item.querySelector('.fc-item-btn').addEventListener('click',e=>{
-        e.stopPropagation();
-        openCtxMenu(e,{type:'fc',fid,fcid});
       });
       items.appendChild(item);
     });
@@ -1565,24 +1843,59 @@ function renderSidebar(){
     group.appendChild(items);
     scroll.appendChild(group);
   });
+
+  if(q&&!shown){
+    const none=document.createElement('div');
+    none.className='search-empty';
+    none.textContent=`No flowcharts match "${q}"`;
+    scroll.appendChild(none);
+  }
 }
 
-function escH(str){ return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+document.getElementById('fc-search')?.addEventListener('input',renderSidebar);
+document.getElementById('fc-search-clear')?.addEventListener('click',()=>{
+  const s=document.getElementById('fc-search');
+  if(s){s.value='';s.focus();}
+  renderSidebar();
+});
 
+// ── Open a saved flowchart ────────────────────────────────────────────────────
 function loadFlowchart(fid,fcid){
-  const folder=collection.folders[fid];
-  if(!folder)return;
-  const fc=folder.flowcharts&&folder.flowcharts[fcid];
+  const fc=collection.folders[fid]?.flowcharts?.[fcid];
   if(!fc||!fc.data){showToast('No saved data found for this flowchart','warn');return;}
-  if(Object.keys(nodes).length>0&&!confirm('Load this flowchart? Unsaved changes will be lost.')){return;}
-  const ok=deserialiseCanvas(fc.data);
-  if(!ok){showToast('Could not load — data may be corrupted','warn');return;}
+  if(fcid===currentFlowchartId)return; // already open
+  guardUnsaved(()=>doLoadFlowchart(fid,fcid),'open another flowchart');
+}
+
+function doLoadFlowchart(fid,fcid){
+  const fc=collection.folders[fid]?.flowcharts?.[fcid];
+  if(!fc||!fc.data){showToast('No saved data found for this flowchart','warn');return;}
+  cancelConn();cancelFreehand();
+  if(!applySnapshot(fc.data)){showToast('Could not load — data may be corrupted','warn');return;}
   currentFlowchartId=fcid;
-  // fit view to show all loaded nodes
-  panX=0;panY=0;zoom=1;applyViewport();
+  resetHistory();
+  fitView();
+  persistNow();
   renderSidebar();
   const n=Object.keys(nodes).length;
-  showToast(`Loaded: ${fc.name}${n?' ('+n+' nodes)':''}`,'ok');
+  showToast(`Opened: ${fc.name}${n?' ('+n+' tiles)':' (empty)'}`,'ok');
+}
+
+// ── Unsaved-work guard ────────────────────────────────────────────────────────
+// Runs `proceed` straight away if nothing would be lost; otherwise asks in-app
+// (the browser's native confirm() is blocked in some sandboxed previews).
+function guardUnsaved(proceed,verb){
+  if(!Object.keys(nodes).length&&!currentFlowchartInfo()){proceed();return;}
+  if(currentFlowchartInfo()){persistNow();proceed();return;}
+  openModal('This canvas isn\'t saved yet',
+    `<p>It only exists as a local draft. If you ${escH(verb)} now, it will be discarded.</p>`,
+    ()=>{ proceed(); },
+    'Discard & continue',
+    {danger:true,extra:{label:'Save first',fn:()=>openSaveModal(proceed)}});
+}
+
+function askConfirm(title,message,okLabel,onOK,danger){
+  openModal(title,`<p>${message}</p>`,()=>{ onOK(); },okLabel,{danger:danger!==false});
 }
 
 // ── Context menu ──────────────────────────────────────────────────────────────
@@ -1591,46 +1904,46 @@ function openCtxMenu(e,target){
   _ctxTarget=target;
   const menu=document.getElementById('ctx-menu');
   if(!menu)return;
-  const cr=document.getElementById('ctx-rename');
-  const cm=document.getElementById('ctx-move');
-  if(cr)cr.style.display='flex';
-  if(cm)cm.style.display=target.type==='fc'?'flex':'none';
+  const show=(id,on)=>{const el=document.getElementById(id);if(el)el.style.display=on?'flex':'none';};
+  show('ctx-rename',true);
+  show('ctx-dup',target.type==='fc');
+  show('ctx-move',target.type==='fc');
   menu.style.display='block';
   const x=Math.min(e.clientX,window.innerWidth-180);
-  const y=Math.min(e.clientY,window.innerHeight-120);
+  const y=Math.min(e.clientY,window.innerHeight-160);
   menu.style.left=x+'px';menu.style.top=y+'px';
 }
-function closeCtxMenu(){ const m=document.getElementById('ctx-menu');if(m)m.style.display='none';_ctxTarget=null; }
+function closeCtxMenu(){ const m=document.getElementById('ctx-menu');if(m)m.style.display='none'; }
 document.addEventListener('click',()=>closeCtxMenu());
 document.getElementById('ctx-menu')?.addEventListener('click',e=>e.stopPropagation());
 
-function ctxRename(){
-  if(!_ctxTarget)return;
-  const t=_ctxTarget; closeCtxMenu();
+function ctxRename(target){
+  const t=target||_ctxTarget; closeCtxMenu();
+  if(!t)return;
   if(t.type==='folder'){
     const f=collection.folders[t.fid];
     if(!f)return;
     openModal('Rename Folder',
       `<label>Folder name</label><input id="mi-name" value="${escH(f.name)}" maxlength="60">`,
-      ()=>{ const v=document.getElementById('mi-name').value.trim(); if(!v)return; f.name=v; saveCollection(); renderSidebar(); }
-    );
+      ()=>{ const v=document.getElementById('mi-name').value.trim(); if(!v)return false; f.name=v; saveCollection(); renderSidebar(); updateSaveStatus(); },
+      'Rename');
   }else{
     const fc=collection.folders[t.fid]?.flowcharts?.[t.fcid];
     if(!fc)return;
     openModal('Rename Flowchart',
       `<label>Flowchart name</label><input id="mi-name" value="${escH(fc.name)}" maxlength="80">`,
-      ()=>{ const v=document.getElementById('mi-name').value.trim(); if(!v)return; fc.name=v; saveCollection(); renderSidebar(); }
-    );
+      ()=>{ const v=document.getElementById('mi-name').value.trim(); if(!v)return false; fc.name=v; saveCollection(); renderSidebar(); updateSaveStatus(); },
+      'Rename');
   }
 }
 
 function ctxMove(){
-  if(!_ctxTarget||_ctxTarget.type!=='fc')return;
   const t=_ctxTarget; closeCtxMenu();
+  if(!t||t.type!=='fc')return;
   const folderOpts=Object.entries(collection.folders)
     .filter(([fid])=>fid!==t.fid)
     .map(([fid,f])=>`<option value="${fid}">${escH(f.name)}</option>`).join('');
-  if(!folderOpts){showToast('No other folders to move to','warn');return;}
+  if(!folderOpts){showToast('No other folders to move to — create one with "+ Folder"','warn');return;}
   openModal('Move to Folder',
     `<label>Destination folder</label><select id="mi-folder">${folderOpts}</select>`,
     ()=>{
@@ -1643,43 +1956,117 @@ function ctxMove(){
       if(!destFolder.flowcharts)destFolder.flowcharts={};
       destFolder.flowcharts[t.fcid]=fc;
       delete srcFolder.flowcharts[t.fcid];
-      saveCollection(); renderSidebar();
-    }
-  );
+      saveCollection(); renderSidebar(); updateSaveStatus();
+    },
+    'Move');
 }
 
-function ctxDelete(){
-  if(!_ctxTarget)return;
+function ctxDuplicate(){
   const t=_ctxTarget; closeCtxMenu();
+  if(t&&t.type==='fc')duplicateFlowchart(t.fid,t.fcid);
+}
+
+function duplicateFlowchart(fid,fcid){
+  const folder=collection.folders[fid];
+  const fc=folder?.flowcharts?.[fcid];
+  if(!fc)return;
+  if(fcid===currentFlowchartId)persistNow(); // make sure the copy has the latest edits
+  const newId=uid();
+  const names=new Set(Object.values(folder.flowcharts).map(f=>f.name));
+  let nm=`${fc.name} (copy)`,i=2;
+  while(names.has(nm))nm=`${fc.name} (copy ${i++})`;
+  folder.flowcharts[newId]={name:nm,data:JSON.parse(JSON.stringify(fc.data))};
+  saveCollection();
+  renderSidebar();
+  showToast(`Duplicated as "${nm}"`,'ok');
+  loadFlowchart(fid,newId); // open the copy so it can be edited right away
+}
+
+function ctxDelete(target){
+  const t=target||_ctxTarget; closeCtxMenu();
+  if(!t)return;
   if(t.type==='folder'){
     const f=collection.folders[t.fid];
-    const count=Object.keys(f?.flowcharts||{}).length;
-    if(!confirm(`Delete folder "${f?.name}"${count>0?` and its ${count} flowchart(s)`:''}?`))return;
-    delete collection.folders[t.fid];
-    saveCollection(); renderSidebar();
+    if(!f)return;
+    const count=Object.keys(f.flowcharts||{}).length;
+    askConfirm('Delete folder?',
+      `Delete the folder <b>${escH(f.name)}</b>${count>0?` and its ${count} flowchart${count>1?'s':''}`:''}? This can't be undone.`,
+      'Delete',
+      ()=>{
+        if(f.flowcharts&&f.flowcharts[currentFlowchartId])currentFlowchartId=null;
+        delete collection.folders[t.fid];
+        saveCollection(); renderSidebar(); updateSaveStatus();
+        showToast('Folder deleted','ok');
+      });
   }else{
     const fc=collection.folders[t.fid]?.flowcharts?.[t.fcid];
-    if(!confirm(`Delete flowchart "${fc?.name}"?`))return;
-    if(currentFlowchartId===t.fcid)currentFlowchartId=null;
-    delete collection.folders[t.fid].flowcharts[t.fcid];
-    saveCollection(); renderSidebar();
+    if(!fc)return;
+    askConfirm('Delete flowchart?',
+      `Delete <b>${escH(fc.name)}</b>? This can't be undone.`,
+      'Delete',
+      ()=>{
+        const wasOpen=currentFlowchartId===t.fcid;
+        if(wasOpen)currentFlowchartId=null;
+        delete collection.folders[t.fid].flowcharts[t.fcid];
+        saveCollection(); renderSidebar();
+        if(wasOpen)persistNow(); else updateSaveStatus();
+        showToast(wasOpen?'Deleted — the canvas is still open as an unsaved draft':'Flowchart deleted','ok');
+      });
   }
 }
 
 // ── Modal ─────────────────────────────────────────────────────────────────────
-let _modalOKFn=null;
-function openModal(title,bodyHTML,okFn){
+let _modalOKFn=null,_modalExtraFn=null;
+function modalOpen(){ return document.getElementById('modal-overlay')?.classList.contains('show'); }
+function openModal(title,bodyHTML,okFn,okLabel,opts){
+  opts=opts||{};
   document.getElementById('modal-title').textContent=title;
+  const okBtn=document.getElementById('modal-ok');
+  okBtn.textContent=okLabel||'Save';
+  okBtn.classList.toggle('danger',!!opts.danger);
+  const ex=document.getElementById('modal-extra');
+  if(opts.extra){ex.style.display='';ex.textContent=opts.extra.label;_modalExtraFn=opts.extra.fn;}
+  else{ex.style.display='none';_modalExtraFn=null;}
+  const cancelBtn=document.getElementById('modal-cancel');
+  cancelBtn.style.display=opts.hideCancel?'none':'';
+  document.getElementById('modal-box').classList.toggle('wide',!!opts.wide);
   document.getElementById('modal-body').innerHTML=bodyHTML;
   _modalOKFn=okFn;
   document.getElementById('modal-overlay').classList.add('show');
-  setTimeout(()=>{ const inp=document.querySelector('#modal-body input,#modal-body select'); if(inp){inp.focus();inp.select&&inp.select();} },50);
+  setTimeout(()=>{
+    const inp=document.querySelector('#modal-body input,#modal-body select');
+    if(inp){inp.focus();inp.select&&inp.select();}
+    else (opts.danger?cancelBtn:okBtn).focus();
+  },50);
   document.querySelectorAll('#modal-body input').forEach(inp=>inp.addEventListener('keydown',e=>{ if(e.key==='Enter')modalOK(); }));
 }
-function closeModal(){ document.getElementById('modal-overlay').classList.remove('show');_modalOKFn=null; }
-// okFn returns false to keep modal open (validation failed), anything else closes it
-function modalOK(){ if(_modalOKFn){ const r=_modalOKFn(); if(r===false)return; } closeModal(); }
+function closeModal(){ document.getElementById('modal-overlay').classList.remove('show');_modalOKFn=null;_modalExtraFn=null; }
+// okFn returns false to keep the modal open (validation failed). If okFn opened another modal, leave that one alone.
+function modalOK(){
+  const fn=_modalOKFn;
+  if(!fn)return;
+  const r=fn();
+  if(r===false)return;
+  if(_modalOKFn===fn)closeModal();
+}
+function modalExtra(){
+  const fn=_modalExtraFn;
+  closeModal();
+  if(fn)fn();
+}
 document.getElementById('modal-overlay')?.addEventListener('click',e=>{ if(e.target===document.getElementById('modal-overlay'))closeModal(); });
+
+// ── New blank flowchart ───────────────────────────────────────────────────────
+function startBlankFlowchart(){
+  cancelConn();cancelFreehand();
+  clearCanvas(); // wipes + detaches from any saved flowchart
+  resetHistory();
+  persistNow();  // marks the draft as intentionally blank so a refresh doesn't resurrect old content
+  panX=0;panY=0;zoom=1;applyViewport();
+  renderSidebar();
+  showToast('New blank flowchart','ok');
+}
+function newFlowchart(){ guardUnsaved(startBlankFlowchart,'start a new flowchart'); }
 
 // ── New folder modal ──────────────────────────────────────────────────────────
 function openNewFolderModal(){
@@ -1691,22 +2078,21 @@ function openNewFolderModal(){
       const fid=uid();
       collection.folders[fid]={name,flowcharts:{}};
       saveCollection(); renderSidebar();
-    }
-  );
+    },
+    'Create');
 }
 
 // ── Save current canvas modal ─────────────────────────────────────────────────
-function openSaveModal(){
-  if(!Object.keys(nodes).length){showToast('Nothing to save — add some nodes first','warn');return;}
+function openSaveModal(afterSave){
+  if(typeof afterSave!=='function')afterSave=null; // may be an event/undefined when used as onclick
+  if(!Object.keys(nodes).length){showToast('Nothing to save — add some tiles first','warn');return;}
+  const info=currentFlowchartInfo();
   const folderOpts=Object.entries(collection.folders)
-    .map(([fid,f])=>`<option value="${fid}">${escH(f.name)}</option>`).join('');
+    .map(([fid,f])=>`<option value="${fid}"${info&&info.fid===fid?' selected':''}>${escH(f.name)}</option>`).join('');
   const folderSel=folderOpts
     ? `<label>Folder</label><select id="mi-sv-folder">${folderOpts}</select>`
     : `<p style="font-size:12px;color:#888;margin-bottom:10px">You have no folders yet — a new one will be created.</p><label>Folder name</label><input id="mi-new-folder" placeholder="New folder name" maxlength="60" style="margin-bottom:10px">`;
-
-  const curName=currentFlowchartId
-    ? (()=>{ for(const f of Object.values(collection.folders)){ const fc=f.flowcharts?.[currentFlowchartId]; if(fc)return fc.name; } return ''; })()
-    : '';
+  const curName=info?info.fc.name:'';
 
   openModal('Save Flowchart',
     `${folderSel}<label>Flowchart name</label><input id="mi-sv-name" placeholder="e.g. Issue Triage Flow" maxlength="80" value="${escH(curName)}">`,
@@ -1730,11 +2116,20 @@ function openSaveModal(){
         ? currentFlowchartId : uid();
       folder.flowcharts[fcid]={name,data:serialiseCanvas()};
       currentFlowchartId=fcid;
-      saveCollection(); renderSidebar();
+      saveCollection();
+      persistNow();
+      renderSidebar();
       showToast(`✓ Saved: ${name}`,'ok');
-      flashSaved();
-    }
-  );
+      if(afterSave)setTimeout(afterSave,0);
+    },
+    'Save');
+}
+
+// Ctrl+S: save straight away if this canvas already belongs to a flowchart
+function quickSave(){
+  if(!Object.keys(nodes).length&&!currentFlowchartInfo()){showToast('Nothing to save yet','warn');return;}
+  if(currentFlowchartInfo()){persistNow();showToast(`✓ Saved: ${currentFlowchartInfo().fc.name}`,'ok');}
+  else openSaveModal();
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
@@ -1753,7 +2148,7 @@ document.getElementById('svg-import-input')?.addEventListener('change',function(
   reader.readAsText(file);
 });
 
-function importSVGText(svgText){
+function importSVGText(svgText,skipGuard){
   try{
     const parser=new DOMParser();
     const doc=parser.parseFromString(svgText,'image/svg+xml');
@@ -1769,8 +2164,12 @@ function importSVGText(svgText){
     const nodeEls=Array.from(doc.querySelectorAll('g[data-id], g[data-shape]'));
     if(!nodeEls.length){ showToast('No editable nodes found. Make sure this was exported from the Flowchart Builder.','warn'); return; }
 
-    if(Object.keys(nodes).length>0&&!confirm('Import will replace the current canvas. Continue?\n\nTip: Save your current work first if needed.'))return;
-    clearCanvas(true);
+    if(!skipGuard){
+      guardUnsaved(()=>importSVGText(svgText,true),'import this SVG');
+      return;
+    }
+    cancelConn();cancelFreehand();
+    clearCanvas();
     // Cancel any pending draft save so it doesn't overwrite the import
     clearTimeout(_draftTimer);
 
@@ -1837,6 +2236,13 @@ function importSVGText(svgText){
       try{
         const parsed=JSON.parse(desc.textContent);
         if(Array.isArray(parsed.edges))edgeData=parsed.edges;
+        // Restore tile colours / notes / links saved by newer exports
+        if(parsed.nodes&&typeof parsed.nodes==='object'){
+          Object.entries(parsed.nodes).forEach(([nid,m])=>{
+            const nd=nodes[importedNodes[nid]||nid];
+            if(nd&&m)applyNodeData(nd.id,{color:m.color,note:m.note,link:m.link});
+          });
+        }
       }catch(e){}
     }
     // 2) Fallback: infer from path geometry — match path endpoints to nearest node ports
@@ -1887,15 +2293,16 @@ function importSVGText(svgText){
       if(seen.has(key))return; seen.add(key);
       if(!importedNodes[ed.from]&&!nodes[ed.from])return;
       if(!importedNodes[ed.to]&&!nodes[ed.to])return;
-      conn={fromId:ed.from,fromPort:ed.fromPort};
-      finishConn(ed.to,ed.toPort,ed.id,ed.label||'');
-      conn=null;
+      createEdge(ed.from,ed.fromPort,ed.to,ed.toPort,{id:ed.id,label:ed.label,color:ed.color,dashed:ed.dashed});
     });
 
     redrawEdges();
     updateStatus();
-    // reset view to show imported content
-    panX=0;panY=0;zoom=1;applyViewport();
+    updateInspector();
+    resetHistory();
+    fitView();
+    persistNow();
+    renderSidebar();
     showToast(`Imported ${Object.keys(importedNodes).length} nodes, ${edgeData.length} connections`,'ok');
   }catch(err){
     console.error('SVG import error:',err, err.stack);
@@ -1918,12 +2325,437 @@ function nearestPort(px,py,nodeBoxes,excludeId){
   return bestD<120?best:null; // only accept if within 120px
 }
 
-// Override exportSVG to also embed edge data for round-trip import
-const _origExportSVG=exportSVG;
-// Patch export to embed edge metadata
-function exportSVGWithMeta(){
-  if(!Object.keys(nodes).length){showToast('Add nodes first.','warn');return false;}
+// ══════════════════════════════════════════════════════════════════════════════
+// ── View helpers ─────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// Zoom/pan so every tile is visible (never zooms in past 100%)
+function fitView(){
+  const ids=Object.keys(nodes);
+  const r=wrap.getBoundingClientRect();
+  if(!ids.length||!r.width||!r.height){panX=0;panY=0;zoom=1;applyViewport();return;}
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  ids.forEach(id=>{const n=nodes[id];minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);maxX=Math.max(maxX,n.x+n.w);maxY=Math.max(maxY,n.y+n.h);});
+  const pad=48,bw=maxX-minX,bh=maxY-minY;
+  zoom=Math.min(1,Math.max(0.15,Math.min((r.width-pad*2)/bw,(r.height-pad*2)/bh)));
+  panX=(r.width-bw*zoom)/2-minX*zoom;
+  panY=(r.height-bh*zoom)/2-minY*zoom;
+  applyViewport();
+}
+
+function selectAll(){
+  deselectAll();
+  Object.keys(nodes).forEach(id=>selectNode(id,true));
+  edges.forEach(e=>{selectedEdges.add(e.id);highlightEdge(e.id,true);});
+  requestInspectorUpdate();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Copy / paste / duplicate ─────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+function copySelection(silent){
+  if(!selected.size)return false;
+  const ids=[...selected];
+  const data={
+    nodes:ids.map(id=>nodeToData(nodes[id])),
+    edges:edges.filter(e=>selected.has(e.from)&&selected.has(e.to)).map(edgeToData),
+    pasteCount:0
+  };
+  clipboardData=data;
+  try{LS.setItem(CLIP_KEY,JSON.stringify(data));}catch(e){}
+  if(!silent)showToast(`Copied ${ids.length} tile${ids.length>1?'s':''} — Ctrl+V to paste`,'ok');
+  return true;
+}
+
+function pasteClipboard(){
+  let data=clipboardData;
+  if(!data){try{data=JSON.parse(LS.getItem(CLIP_KEY)||'null');}catch(e){data=null;}}
+  if(!data||!data.nodes||!data.nodes.length){showToast('Nothing copied yet — select tiles and press Ctrl+C','warn');return;}
+  clipboardData=data;
+  data.pasteCount=(data.pasteCount||0)+1;
+  const off=24*data.pasteCount;
+  let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
+  data.nodes.forEach(n=>{minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);maxX=Math.max(maxX,n.x+n.w);maxY=Math.max(maxY,n.y+n.h);});
+  let dx=off,dy=off;
+  // If the copied tiles would land outside the visible area (e.g. pasting into another flowchart), drop them in the middle of the view
+  const r=wrap.getBoundingClientRect();
+  const tl=c2w(r.left,r.top),br=c2w(r.right,r.bottom);
+  const cx=(minX+maxX)/2+off,cy=(minY+maxY)/2+off;
+  if(cx<tl.x||cx>br.x||cy<tl.y||cy>br.y){
+    dx=(tl.x+br.x)/2-(minX+maxX)/2+(data.pasteCount-1)*24;
+    dy=(tl.y+br.y)/2-(minY+maxY)/2+(data.pasteCount-1)*24;
+  }
+  const idMap={},newIds=[];
+  batch(()=>{
+    data.nodes.forEach(nd=>{
+      const id=addNode(nd.shape,nd.x+dx,nd.y+dy,nd.label);
+      applyNodeData(id,nd);
+      idMap[nd.id]=id;newIds.push(id);
+    });
+    (data.edges||[]).forEach(e=>{
+      if(idMap[e.from]&&idMap[e.to])createEdge(idMap[e.from],e.fromPort,idMap[e.to],e.toPort,{label:e.label,color:e.color,dashed:e.dashed});
+    });
+  });
+  deselectAll();
+  newIds.forEach(id=>selectNode(id,true));
+  requestInspectorUpdate();
+  showToast(`Pasted ${newIds.length} tile${newIds.length>1?'s':''}`,'ok');
+}
+
+function duplicateSelection(){
+  if(!selected.size)return;
+  if(copySelection(true))pasteClipboard();
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Inspector: tile colors, notes, links, connector styling ──────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+const inspector=document.getElementById('inspector');
+const inspNote=document.getElementById('insp-note');
+const inspLink=document.getElementById('insp-link');
+const inspEdgeLabel=document.getElementById('insp-edge-label');
+let _inspRaf=null;
+function requestInspectorUpdate(){
+  if(_inspRaf)return;
+  _inspRaf=requestAnimationFrame(()=>{_inspRaf=null;updateInspector();});
+}
+
+function safeUrl(u){
+  u=(u||'').trim();
+  if(!u)return null;
+  if(!/^[a-z][a-z0-9+.-]*:/i.test(u))u='https://'+u;
+  return /^https?:\/\//i.test(u)?u:null;
+}
+
+function updateNodeBadge(id){
+  const n=nodes[id];if(!n)return;
+  if(n.badgeEl){n.badgeEl.remove();n.badgeEl=null;}
+  if(!n.note&&!n.link)return;
+  const g=svgEl('g',{class:'node-badge',transform:`translate(${n.w-2},2)`});
+  g.appendChild(svgEl('circle',{r:8,fill:n.link?'#2563EB':'#F59E0B',stroke:'#fff','stroke-width':'1.5'}));
+  const t=svgEl('text',{'text-anchor':'middle',y:3.5,'font-size':10,'font-weight':700,fill:'#fff','font-family':'Inter,system-ui,sans-serif','pointer-events':'none'});
+  t.textContent=n.link?'↗':'i';
+  g.appendChild(t);
+  const title=svgEl('title');
+  title.textContent=[n.note,n.link].filter(Boolean).join('\n');
+  g.appendChild(title);
+  if(n.link){
+    g.addEventListener('click',()=>{
+      if(_lastDragMoved)return;
+      const u=safeUrl(n.link);
+      if(u)window.open(u,'_blank','noopener');
+    });
+  }
+  n.g.appendChild(g);
+  n.badgeEl=g;
+}
+
+function applyNodeStyle(id){
+  const n=nodes[id];if(!n)return;
+  n.bodyEl.setAttribute('fill',nodeFill(n));
+  highlightNode(id,selected.has(id));
+  updateNodeBadge(id);
+}
+
+function applyEdgeStyle(e){ paintEdge(e,selectedEdges.has(e.id)); }
+
+function buildSwatches(){
+  const ts=document.getElementById('tile-swatches');
+  if(ts){
+    Object.entries(TILE_COLORS).forEach(([key,c])=>{
+      const b=document.createElement('button');
+      b.className='swatch';b.dataset.key=key;
+      b.title=c?c.label:'Default (by shape)';
+      if(c){b.style.background=c.fill;b.style.borderColor=c.stroke;}
+      else b.textContent='∅';
+      b.addEventListener('click',()=>setSelectedTileColor(key));
+      ts.appendChild(b);
+    });
+  }
+  const es=document.getElementById('edge-swatches');
+  if(es){
+    Object.entries(EDGE_COLORS).forEach(([name,hex])=>{
+      const b=document.createElement('button');
+      b.className='swatch';b.dataset.hex=hex;b.title=name;
+      b.style.background=hex;b.style.borderColor=hex;
+      b.addEventListener('click',()=>setSelectedEdgeColor(hex==='#6B7280'?null:hex));
+      es.appendChild(b);
+    });
+  }
+}
+
+function setSelectedTileColor(key){
+  if(!selected.size)return;
+  batch(()=>{
+    selected.forEach(id=>{const n=nodes[id];if(!n)return;n.color=key==='default'?null:key;applyNodeStyle(id);});
+    markChanged();
+  });
+  requestInspectorUpdate();
+}
+function setSelectedEdgeColor(hex){
+  if(!selectedEdges.size)return;
+  batch(()=>{
+    edges.forEach(e=>{if(selectedEdges.has(e.id)){e.color=hex;applyEdgeStyle(e);}});
+    markChanged();
+  });
+  requestInspectorUpdate();
+}
+function setSelectedEdgeDashed(on){
+  if(!selectedEdges.size)return;
+  batch(()=>{
+    edges.forEach(e=>{if(selectedEdges.has(e.id)){e.dashed=!!on;applyEdgeStyle(e);}});
+    markChanged();
+  });
+  requestInspectorUpdate();
+}
+function setSelectedEdgeLabel(text){
+  if(selectedEdges.size!==1)return;
+  const e=edges.find(x=>selectedEdges.has(x.id));
+  if(!e)return;
+  e.label=(text||'').trim();
+  redrawEdge(e);
+  markChanged();
+  if(inspEdgeLabel)inspEdgeLabel.value=e.label;
+}
+
+function singleSelectedNode(){ return selected.size===1?nodes[[...selected][0]]:null; }
+
+function updateInspector(){
+  if(!inspector)return;
+  const nCount=selected.size,eCount=selectedEdges.size;
+  inspector.style.display=(nCount||eCount)?'block':'none';
+  const nBox=document.getElementById('insp-node'),eBox=document.getElementById('insp-edge');
+  if(nBox)nBox.style.display=nCount?'block':'none';
+  if(eBox)eBox.style.display=eCount?'block':'none';
+
+  if(nCount){
+    document.getElementById('insp-node-title').textContent=nCount===1?'Tile':`${nCount} tiles`;
+    const single=singleSelectedNode();
+    document.getElementById('insp-node-single').style.display=single?'block':'none';
+    if(single){
+      if(document.activeElement!==inspNote)inspNote.value=single.note||'';
+      if(document.activeElement!==inspLink)inspLink.value=single.link||'';
+    }
+    const colors=new Set([...selected].map(id=>nodes[id]?.color||'default'));
+    const cur=colors.size===1?[...colors][0]:null;
+    document.querySelectorAll('#tile-swatches .swatch').forEach(b=>b.classList.toggle('on',b.dataset.key===cur));
+  }
+  if(eCount){
+    document.getElementById('insp-edge-title').textContent=eCount===1?'Connector':`${eCount} connectors`;
+    const sel=edges.filter(e=>selectedEdges.has(e.id));
+    const cols=new Set(sel.map(e=>e.color||'#6B7280'));
+    const curC=cols.size===1?[...cols][0]:null;
+    document.querySelectorAll('#edge-swatches .swatch').forEach(b=>b.classList.toggle('on',b.dataset.hex===curC));
+    const allDashed=sel.length&&sel.every(e=>e.dashed),noneDashed=sel.every(e=>!e.dashed);
+    document.getElementById('edge-solid').classList.toggle('on',noneDashed);
+    document.getElementById('edge-dashed').classList.toggle('on',!!allDashed);
+    document.getElementById('insp-edge-single').style.display=sel.length===1?'block':'none';
+    if(sel.length===1&&document.activeElement!==inspEdgeLabel)inspEdgeLabel.value=sel[0].label||'';
+  }
+}
+
+if(inspector){
+  inspector.addEventListener('wheel',e=>e.stopPropagation());
+  inspNote.addEventListener('input',()=>{const n=singleSelectedNode();if(!n)return;n.note=inspNote.value;updateNodeBadge(n.id);});
+  inspNote.addEventListener('change',()=>markChanged());
+  inspLink.addEventListener('input',()=>{const n=singleSelectedNode();if(!n)return;n.link=inspLink.value.trim();updateNodeBadge(n.id);});
+  inspLink.addEventListener('change',()=>markChanged());
+  document.getElementById('insp-open-link').addEventListener('click',()=>{
+    const n=singleSelectedNode();
+    const u=n&&safeUrl(n.link);
+    if(u)window.open(u,'_blank','noopener'); else showToast('Add a valid http(s) link first','warn');
+  });
+  document.getElementById('edge-solid').addEventListener('click',()=>setSelectedEdgeDashed(false));
+  document.getElementById('edge-dashed').addEventListener('click',()=>setSelectedEdgeDashed(true));
+  inspector.querySelectorAll('[data-lbl]').forEach(b=>b.addEventListener('click',()=>setSelectedEdgeLabel(b.dataset.lbl)));
+  inspEdgeLabel.addEventListener('keydown',e=>{if(e.key==='Enter'){setSelectedEdgeLabel(inspEdgeLabel.value);inspEdgeLabel.blur();}e.stopPropagation();});
+  inspEdgeLabel.addEventListener('change',()=>setSelectedEdgeLabel(inspEdgeLabel.value));
+}
+buildSwatches();
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Auto layout ("Tidy") ─────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+// Layered top-to-bottom layout: break cycles, rank by longest path, order each
+// rank to reduce crossings (keeping the existing left/right order on ties),
+// then pull every tile toward the average position of its neighbours.
+function layoutComponent(list,out,inc,GAPX,GAPY){
+  const state={},dagOut={},dagIn={};
+  list.forEach(id=>{dagOut[id]=[];dagIn[id]=[];});
+  const byPos=(a,b)=>(nodes[a].y-nodes[b].y)||(nodes[a].x-nodes[b].x);
+  const roots=list.filter(id=>inc[id].length===0).sort(byPos);
+  const order=roots.concat(list.filter(id=>inc[id].length>0).sort(byPos));
+  function dfs(u){
+    state[u]=1;
+    out[u].slice().sort((a,b)=>nodes[a].x-nodes[b].x).forEach(v=>{
+      if(state[v]===1)return; // back edge (loop) — ignored for ranking
+      dagOut[u].push(v);dagIn[v].push(u);
+      if(!state[v])dfs(v);
+    });
+    state[u]=2;
+  }
+  order.forEach(id=>{if(!state[id])dfs(id);});
+
+  const layer={};
+  function lay(u){
+    if(layer[u]!=null)return layer[u];
+    layer[u]=0;
+    let l=0;
+    dagIn[u].forEach(p=>{l=Math.max(l,lay(p)+1);});
+    layer[u]=l;
+    return l;
+  }
+  list.forEach(lay);
+
+  const L=Math.max(...list.map(id=>layer[id]))+1;
+  const layers=Array.from({length:L},()=>[]);
+  list.slice().sort((a,b)=>nodes[a].x-nodes[b].x).forEach(id=>layers[layer[id]].push(id));
+
+  const idx={};
+  const reindex=()=>layers.forEach(arr=>arr.forEach((id,i)=>{idx[id]=i;}));
+  const sortByBary=(arr,nbrs)=>{
+    const key={};
+    arr.forEach((id,i)=>{const ns=nbrs(id);key[id]=ns.length?ns.reduce((s,v)=>s+idx[v],0)/ns.length:i;});
+    arr.sort((a,b)=>key[a]-key[b]);
+  };
+  reindex();
+  for(let it=0;it<4;it++){
+    for(let l=1;l<L;l++){sortByBary(layers[l],id=>dagIn[id]);reindex();}
+    for(let l=L-2;l>=0;l--){sortByBary(layers[l],id=>dagOut[id]);reindex();}
+  }
+
+  const w=id=>nodes[id].w;
+  const xc={};
+  layers.forEach(arr=>{
+    let x=0;
+    arr.forEach(id=>{xc[id]=x+w(id)/2;x+=w(id)+GAPX;});
+    const total=x-GAPX;
+    arr.forEach(id=>{xc[id]-=total/2;});
+  });
+  const resolve=(arr,des)=>{
+    const pos=[];
+    arr.forEach((id,i)=>{
+      const minX=i?pos[i-1]+(w(arr[i-1])+w(id))/2+GAPX:-Infinity;
+      pos[i]=Math.max(des[id],minX);
+    });
+    let shift=0;
+    arr.forEach((id,i)=>{shift+=des[id]-pos[i];});
+    shift/=arr.length;
+    arr.forEach((id,i)=>{xc[id]=pos[i]+shift;});
+  };
+  for(let it=0;it<8;it++){
+    for(let l=1;l<L;l++){
+      const des={};
+      layers[l].forEach(id=>{const ps=dagIn[id];des[id]=ps.length?ps.reduce((s,p)=>s+xc[p],0)/ps.length:xc[id];});
+      resolve(layers[l],des);
+    }
+    for(let l=L-2;l>=0;l--){
+      const des={};
+      layers[l].forEach(id=>{const cs=dagOut[id];des[id]=cs.length?cs.reduce((s,c)=>s+xc[c],0)/cs.length:xc[id];});
+      resolve(layers[l],des);
+    }
+  }
+
+  let minX=Infinity,maxX=-Infinity;
+  list.forEach(id=>{minX=Math.min(minX,xc[id]-w(id)/2);maxX=Math.max(maxX,xc[id]+w(id)/2);});
+  const pos={};
+  let y=0;
+  layers.forEach(arr=>{
+    const lh=Math.max(...arr.map(id=>nodes[id].h));
+    arr.forEach(id=>{pos[id]={x:xc[id]-w(id)/2-minX,y:y+(lh-nodes[id].h)/2};});
+    y+=lh+GAPY;
+  });
+  return{pos,width:maxX-minX,layer};
+}
+
+// After layout, point connectors the natural way (down the page; decision branches out of the sides)
+function assignLayoutPorts(layer){
+  const fwd={};
+  edges.forEach(e=>{
+    const a=nodes[e.from],b=nodes[e.to];
+    if(!a||!b)return;
+    const la=layer[e.from],lb=layer[e.to];
+    if(la==null||lb==null)return;
+    if(lb>la){(fwd[e.from]=fwd[e.from]||[]).push(e);e.fromPort='s';e.toPort='n';}
+    else if(lb===la){
+      const right=(b.x+b.w/2)>(a.x+a.w/2);
+      e.fromPort=right?'e':'w';e.toPort=right?'w':'e';
+    }
+    // loops back up keep whatever ports they had
+  });
+  Object.entries(fwd).forEach(([id,list])=>{
+    const n=nodes[id];
+    if(n.shape!=='decision'||list.length<2)return;
+    list.sort((p,q)=>(nodes[p.to].x+nodes[p.to].w/2)-(nodes[q.to].x+nodes[q.to].w/2));
+    const first=list[0],last=list[list.length-1];
+    if(nodes[first.to].x+nodes[first.to].w/2<n.x)first.fromPort='w';
+    if(nodes[last.to].x+nodes[last.to].w/2>n.x+n.w)last.fromPort='e';
+  });
+}
+
+function autoLayout(){
+  const ids=Object.keys(nodes);
+  if(!ids.length){showToast('Add some tiles first','warn');return;}
+  cancelConn();cancelFreehand();
+  const GAPX=56,GAPY=72,COMP_GAP=96;
+  let ax=Infinity,ay=Infinity;
+  ids.forEach(id=>{ax=Math.min(ax,nodes[id].x);ay=Math.min(ay,nodes[id].y);});
+
+  const out={},inc={};
+  ids.forEach(id=>{out[id]=[];inc[id]=[];});
+  edges.forEach(e=>{
+    if(e.from===e.to||!nodes[e.from]||!nodes[e.to])return;
+    if(!out[e.from].includes(e.to))out[e.from].push(e.to);
+    if(!inc[e.to].includes(e.from))inc[e.to].push(e.from);
+  });
+
+  const comp={},comps=[];
+  ids.forEach(id=>{
+    if(comp[id]!=null)return;
+    const c=comps.length,list=[],stack=[id];
+    comp[id]=c;
+    while(stack.length){
+      const u=stack.pop();list.push(u);
+      out[u].concat(inc[u]).forEach(v=>{if(comp[v]==null){comp[v]=c;stack.push(v);}});
+    }
+    comps.push(list);
+  });
+  comps.sort((a,b)=>Math.min(...a.map(i=>nodes[i].x))-Math.min(...b.map(i=>nodes[i].x)));
+
+  let cursorX=0;
+  const placed={},layerOf={};
+  comps.forEach(list=>{
+    const res=layoutComponent(list,out,inc,GAPX,GAPY);
+    Object.entries(res.pos).forEach(([id,p])=>{placed[id]={x:p.x+cursorX,y:p.y};});
+    Object.assign(layerOf,res.layer);
+    cursorX+=res.width+COMP_GAP;
+  });
+  let mx=Infinity,my=Infinity;
+  Object.values(placed).forEach(p=>{mx=Math.min(mx,p.x);my=Math.min(my,p.y);});
+
+  batch(()=>{
+    ids.forEach(id=>{
+      const n=nodes[id];
+      n.x=placed[id].x-mx+ax;n.y=placed[id].y-my+ay;
+      n.g.setAttribute('transform',`translate(${n.x},${n.y})`);
+    });
+    assignLayoutPorts(layerOf);
+    redrawEdges();
+    markChanged();
+  });
+  fitView();
+  showToast('Tidied layout — Ctrl+Z to undo','ok');
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Export: SVG file, PNG, and the one-click "Save to Notion" flow ───────────
+// ══════════════════════════════════════════════════════════════════════════════
+// Builds a clean, standalone SVG of the flowchart (white background, no editor chrome)
+function buildExport(){
   closeNodeEdit();
+  // Selection highlights must not leak into the export — deselect, clone, then restore
+  const selN=[...selected],selE=[...selectedEdges];
+  deselectAll();
+
   let minX=Infinity,minY=Infinity,maxX=-Infinity,maxY=-Infinity;
   Object.values(nodes).forEach(n=>{
     minX=Math.min(minX,n.x);minY=Math.min(minY,n.y);
@@ -1934,18 +2766,14 @@ function exportSVGWithMeta(){
   const clone=mainSvg.cloneNode(true);
   clone.setAttribute('width',W);clone.setAttribute('height',H);
   clone.setAttribute('viewBox',`${minX} ${minY} ${W} ${H}`);
-  // The live #viewport carries whatever pan/zoom transform was on screen when
-  // export was clicked. The viewBox above is computed from raw node world
-  // coordinates, so that transform must be reset to identity here or the
-  // exported content renders shifted/scaled outside the viewBox — which looks
-  // like an "empty" export.
+  // The live #viewport carries the on-screen pan/zoom transform. The viewBox above is in raw
+  // world coordinates, so the transform must be removed or the content lands outside the frame.
   const cloneViewport=clone.querySelector('#viewport');
   if(cloneViewport)cloneViewport.removeAttribute('transform');
-  // Replace the dotted canvas background with a plain white fill for export
+  // Plain white background instead of the editor's dot grid
   const cloneBg=clone.querySelector('#canvas-bg-rect');
   if(cloneBg)cloneBg.setAttribute('fill','#ffffff');
-  clone.querySelectorAll('#snap-guide-v,#snap-guide-h').forEach(el=>el.remove());
-  clone.querySelectorAll('#preview-line,#freehand-path,.port,.resize-handle').forEach(el=>el.remove());
+  clone.querySelectorAll('#snap-guide-v,#snap-guide-h,#preview-line,#freehand-path,.port,.resize-handle,.node-badge').forEach(el=>el.remove());
   clone.querySelectorAll('path[stroke="transparent"]').forEach(el=>el.remove());
   clone.querySelectorAll('.edge-label-g').forEach(el=>{
     if(el.style.display==='none')el.remove();
@@ -1956,50 +2784,199 @@ function exportSVGWithMeta(){
     if(s.includes('display:none')){el.remove();return;}
     el.removeAttribute('style');
   });
-  clone.querySelectorAll('text').forEach(el=>el.removeAttribute('style'));
-  clone.querySelectorAll('[stroke="#E8503A"]').forEach(el=>{
-    const id=el.closest('[data-shape]')?.dataset.shape;
-    const strokes={step:'#D1D5DB',decision:'#FCD34D',terminal:'#86EFAC',action:'#93C5FD'};
-    if(id)el.setAttribute('stroke',strokes[id]||'#D1D5DB');
-    el.setAttribute('stroke-width','1.5');
-  });
 
-  // Embed edge data for re-import
-  const edgeMeta=edges.map(e=>({id:e.id,from:e.from,fromPort:e.fromPort,to:e.to,toPort:e.toPort,label:e.label}));
+  // Embed data so the SVG can be re-imported later with colours, notes and links intact
+  const nodeMeta={};
+  Object.values(nodes).forEach(n=>{
+    if(n.color||n.note||n.link)nodeMeta[n.id]={color:n.color||undefined,note:n.note||undefined,link:n.link||undefined};
+  });
   const descEl=document.createElementNS(SVG_NS,'desc');
-  descEl.textContent=JSON.stringify({edges:edgeMeta,nodeCounter,edgeCounter});
+  descEl.textContent=JSON.stringify({edges:edges.map(edgeToData),nodes:nodeMeta,nodeCounter,edgeCounter});
   clone.insertBefore(descEl,clone.firstChild);
 
-  const blob=new Blob(['<?xml version="1.0" encoding="UTF-8"?>',clone.outerHTML],{type:'image/svg+xml'});
+  const svg='<?xml version="1.0" encoding="UTF-8"?>'+clone.outerHTML;
+
+  selN.forEach(id=>selectNode(id,true));
+  selE.forEach(id=>{selectedEdges.add(id);highlightEdge(id,true);});
+  requestInspectorUpdate();
+  return{svg,W,H};
+}
+
+function exportFileBase(){
+  const info=currentFlowchartInfo();
+  const nm=(info?info.fc.name:'flowchart').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'');
+  return nm||'flowchart';
+}
+
+function downloadBlob(blob,filename){
   const url=URL.createObjectURL(blob);
-  const a=document.createElement('a');a.href=url;a.download='flowchart.svg';a.click();
-  URL.revokeObjectURL(url);
+  const a=document.createElement('a');
+  a.href=url;a.download=filename;
+  document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+
+function svgToPngBlob(svg,W,H,scale){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>{
+      const s=Math.min(scale,4096/Math.max(W,H));
+      const c=document.createElement('canvas');
+      c.width=Math.max(1,Math.ceil(W*s));c.height=Math.max(1,Math.ceil(H*s));
+      const ctx=c.getContext('2d');
+      ctx.fillStyle='#ffffff';ctx.fillRect(0,0,c.width,c.height);
+      ctx.drawImage(img,0,0,c.width,c.height);
+      c.toBlob(b=>b?resolve(b):reject(new Error('PNG encoding failed')),'image/png');
+    };
+    img.onerror=()=>reject(new Error('Could not render the flowchart to an image'));
+    img.src='data:image/svg+xml;charset=utf-8,'+encodeURIComponent(svg);
+  });
+}
+
+// Plain SVG download (kept for the exportSVG() name used elsewhere)
+function exportSVG(){
+  if(!Object.keys(nodes).length){showToast('Add some tiles first','warn');return false;}
+  const exp=buildExport();
+  downloadBlob(new Blob([exp.svg],{type:'image/svg+xml'}),exportFileBase()+'.svg');
   return true;
 }
 
-// Replace global exportSVG with the meta version
-window.exportSVG=exportSVGWithMeta;
+// One click: download the SVG, copy a PNG to the clipboard, open the Notion flowchart library
+function saveToNotion(){
+  if(!Object.keys(nodes).length){showToast('Add some tiles first','warn');return;}
+  const exp=buildExport();
+  // 1) Start copying the PNG synchronously inside the click so the browser allows clipboard access
+  let clipP;
+  if(navigator.clipboard&&window.ClipboardItem){
+    try{
+      clipP=navigator.clipboard.write([new ClipboardItem({'image/png':svgToPngBlob(exp.svg,exp.W,exp.H,2)})]);
+    }catch(err){clipP=Promise.reject(err);}
+  }else clipP=Promise.reject(new Error('Clipboard image copy is not supported in this browser'));
+  // 2) Download the SVG
+  downloadBlob(new Blob([exp.svg],{type:'image/svg+xml'}),exportFileBase()+'.svg');
+  // 3) Open the Notion library after the clipboard write settles (a new tab steals focus and the
+  //    browser would refuse the copy), but never wait more than a few seconds.
+  let opened=false;
+  const openNotion=()=>{
+    if(opened)return;opened=true;
+    const w=window.open(NOTION_DB_URL,'_blank');
+    if(!w)showToast('Popup blocked — allow popups to open the Notion library','warn');
+  };
+  const timeout=setTimeout(openNotion,3500);
+  clipP.then(()=>{
+    clearTimeout(timeout);
+    showToast('✓ SVG saved · PNG copied to clipboard — paste it anywhere with Ctrl+V','ok');
+    openNotion();
+  }).catch(err=>{
+    clearTimeout(timeout);
+    console.warn('Clipboard copy failed:',err);
+    svgToPngBlob(exp.svg,exp.W,exp.H,2)
+      .then(b=>{downloadBlob(b,exportFileBase()+'.png');showToast('SVG + PNG downloaded (clipboard unavailable here)','warn');})
+      .catch(()=>showToast('SVG downloaded — could not create the PNG','warn'));
+    openNotion();
+  });
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Shortcut cheat sheet & settings ──────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+function openHelpModal(){
+  const row=(label,keys)=>`<div class="sc-row"><span>${label}</span><span>${keys.map(k=>`<span class="kbd">${k}</span>`).join(' ')}</span></div>`;
+  openModal('Shortcuts & settings',
+    `<div class="sc-grid">
+      <h4>Add tiles</h4>
+      ${row('Step',['S'])}${row('Decision',['D'])}${row('Terminal',['T'])}${row('Action',['A'])}
+      <h4>Tools</h4>
+      ${row('Select',['V'])}${row('Connect',['C'])}${row('Snapping on/off',['G'])}${row('Tidy layout',['L'])}
+      <h4>Editing</h4>
+      ${row('Undo',['Ctrl','Z'])}${row('Redo',['Ctrl','Shift','Z'])}
+      ${row('Copy',['Ctrl','C'])}${row('Paste',['Ctrl','V'])}
+      ${row('Duplicate',['Ctrl','D'])}${row('Select all',['Ctrl','A'])}
+      ${row('Delete',['Del'])}${row('Save',['Ctrl','S'])}
+      ${row('Edit text',['Dbl-click'])}${row('Label a connector',['Dbl-click'])}
+      ${row('Multi-select',['Shift','click'])}${row('Flip snapping while dragging',['Shift'])}
+      <h4>View</h4>
+      ${row('Pan',['Space','drag'])}${row('Zoom',['Scroll'])}
+      ${row('Fit to screen',['Ctrl','0'])}${row('This sheet',['?'])}
+    </div>`,
+    null,'Close',{wide:true,hideCancel:true});
+}
+
+// ══════════════════════════════════════════════════════════════════════════════
+// ── Keyboard ─────────────────────────────────────────────────────────────────
+// ══════════════════════════════════════════════════════════════════════════════
+let spaceDown=false;
+document.addEventListener('keydown',e=>{
+  const tag=e.target&&e.target.tagName;
+  const typing=tag==='INPUT'||tag==='TEXTAREA'||tag==='SELECT';
+  if(modalOpen()){
+    if(e.key==='Escape'){closeModal();}
+    else if(e.key==='Enter'&&!typing&&tag!=='BUTTON'){modalOK();}
+    return;
+  }
+  if(typing)return;
+  const mod=e.ctrlKey||e.metaKey;
+  const k=(e.key||'').toLowerCase();
+
+  if(mod){
+    if(k==='z'){e.preventDefault();e.shiftKey?redo():undo();return;}
+    if(k==='y'){e.preventDefault();redo();return;}
+    if(k==='c'){if(selected.size){e.preventDefault();copySelection();}return;}
+    if(k==='v'){e.preventDefault();pasteClipboard();return;}
+    if(k==='d'){e.preventDefault();duplicateSelection();return;}
+    if(k==='a'){e.preventDefault();selectAll();return;}
+    if(k==='s'){e.preventDefault();quickSave();return;}
+    if(k==='0'){e.preventDefault();fitView();return;}
+    if(k==='='||k==='+'){e.preventDefault();zoomStep(1.2);return;}
+    if(k==='-'){e.preventDefault();zoomStep(1/1.2);return;}
+    return;
+  }
+  if(e.altKey)return;
+  if(e.key===' '&&!spaceDown){spaceDown=true;wrap.style.cursor='grab';e.preventDefault();return;}
+  if(k==='v')setMode('select');
+  else if(k==='c')setMode('connect');
+  else if(k==='s')addNode('step');
+  else if(k==='d')addNode('decision');
+  else if(k==='t')addNode('terminal');
+  else if(k==='a')addNode('action');
+  else if(k==='g')toggleSnap();
+  else if(k==='l')autoLayout();
+  else if(e.key==='?')openHelpModal();
+  else if(e.key==='Delete'||e.key==='Backspace')deleteSelected();
+  else if(e.key==='Escape'){cancelConn();cancelFreehand();deselectAll();requestInspectorUpdate();}
+});
+document.addEventListener('keyup',e=>{
+  if(e.key===' '){spaceDown=false;wrap.style.cursor='';if(!mode||mode==='connect')wrap.style.cursor='crosshair';}
+});
+// Space+drag panning
+wrap.addEventListener('mousedown',e=>{
+  if(spaceDown&&e.button===0){
+    e.preventDefault();e.stopPropagation();
+    isPanning=true;
+    panStart={x:e.clientX-panX, y:e.clientY-panY};
+    wrap.classList.add('panning');
+  }
+},true);
+
 
 // ── Sample ────────────────────────────────────────────────────────────────────
-function loadSample(){
-  clearCanvas(true);
+function loadSample(){ guardUnsaved(doLoadSample,'load the sample'); }
+function doLoadSample(){
+  cancelConn();cancelFreehand();
+  clearCanvas();
   panX=0;panY=0;zoom=1;applyViewport();
   const cx=wrap.offsetWidth/2,g=120;
-  const s =addNode('terminal',cx-70, 60,      'Start');
-  const q1=addNode('decision',cx-70, 60+g,    'Is the requester Brian Stai?');
-  const im=addNode('action',  cx-240,60+g*2,  'Delete the invoice(s) for Brian');
-  const ma=addNode('step',    cx+60, 60+g*2,  'Ask what they want to do with the invoice');
-  const q2=addNode('decision',cx+60, 60+g*3,  'What is the requested action?');
-  const rv=addNode('action',  cx-40, 60+g*4,  'Ask the user to contact Dorothy Park to acknowledge the error');
-  const ask=addNode('step',   cx+160,60+g*4,  'Ask why the invoice needs to be deleted');
-  const tag=addNode('step',   cx+160,60+g*5,  'Tag Julian in the Slack thread');
-  const ok=addNode('terminal',cx-40, 60+g*6,  'Resolved');
-
-  setTimeout(()=>{
-    function link(a,ap,b,bp,lbl){
-      conn={fromId:a,fromPort:ap};finishConn(b,bp);conn=null;
-      if(lbl){edges[edges.length-1].label=lbl;redrawEdge(edges[edges.length-1]);}
-    }
+  batch(()=>{
+    const s =addNode('terminal',cx-70, 60,      'Start');
+    const q1=addNode('decision',cx-70, 60+g,    'Is the requester Brian Stai?');
+    const im=addNode('action',  cx-240,60+g*2,  'Delete the invoice(s) for Brian');
+    const ma=addNode('step',    cx+60, 60+g*2,  'Ask what they want to do with the invoice');
+    const q2=addNode('decision',cx+60, 60+g*3,  'What is the requested action?');
+    const rv=addNode('action',  cx-40, 60+g*4,  'Ask the user to contact Dorothy Park to acknowledge the error');
+    const ask=addNode('step',   cx+160,60+g*4,  'Ask why the invoice needs to be deleted');
+    const tag=addNode('step',   cx+160,60+g*5,  'Tag Julian in the Slack thread');
+    const ok=addNode('terminal',cx-40, 60+g*6,  'Resolved');
+    const link=(a,ap,b,bp,lbl)=>createEdge(a,ap,b,bp,{label:lbl});
     link(s,'s',q1,'n');
     link(q1,'w',im,'n','YES');
     link(q1,'e',ma,'n','NO');
@@ -2010,16 +2987,22 @@ function loadSample(){
     link(im,'s',ok,'n');
     link(rv,'s',ok,'n');
     link(tag,'s',ok,'e');
-    updateStatus();
-  },50);
+  });
+  updateStatus();
+  resetHistory();
+  fitView();
+  persistNow();
+  renderSidebar();
 }
 
 // ── Init ─────────────────────────────────────────────────────────────────────
 try{
   applyViewport();
+  restoreDraft();   // brings back the last canvas (and re-attaches it to its saved flowchart); otherwise stays blank
+  resetHistory();
   renderSidebar();
-  restoreDraft();
-  if(!Object.keys(nodes).length){ loadSample(); }
+  updateSaveStatus();
+  updateInspector();
 }catch(e){ console.warn('Init error (sandbox?):', e); }
 </script>
 </body>
