@@ -425,7 +425,7 @@
   </button>
   <div class="sep"></div>
   <button class="mode-btn active" id="btn-select" onclick="setMode('select')">&#10022; Select <span class="kbd">V</span></button>
-  <button class="mode-btn" id="btn-connect" onclick="setMode('connect')">&#10551; Connect <span class="kbd">C</span></button>
+  <button class="mode-btn" id="btn-connect" onclick="setMode('connect')" title="Drag from one tile onto another to connect them. The sides are picked automatically.">&#10551; Connect <span class="kbd">C</span></button>
   <div class="sep"></div>
   <button class="mode-btn active" id="btn-snap" onclick="toggleSnap()" title="Snap tiles and lines to align with each other">&#128204; Snap <span class="kbd">G</span></button>
   <div class="sep"></div>
@@ -769,13 +769,15 @@ function setback(x1,y1,x2,y2,amt){
 }
 
 // ── Rounded orthogonal path ───────────────────────────────────────────────────
-function routePts(x1,y1,x2,y2,fp,tp){
+// midT (optional) = where the middle segment sits along the span, 0.5 = halfway (user-adjustable)
+function routePts(x1,y1,x2,y2,fp,tp,midT){
   const fv=fp==='n'||fp==='s', tv=tp==='n'||tp==='s';
+  const t=(midT==null?0.5:midT);
   let pts;
   if(Math.abs(y1-y2)<2&&!fv&&!tv) pts=[[x1,y1],[x2,y2]];
   else if(Math.abs(x1-x2)<2&&fv&&tv) pts=[[x1,y1],[x2,y2]];
-  else if(fv&&tv){const my=(y1+y2)/2;pts=[[x1,y1],[x1,my],[x2,my],[x2,y2]];}
-  else if(!fv&&!tv){const mx=(x1+x2)/2;pts=[[x1,y1],[mx,y1],[mx,y2],[x2,y2]];}
+  else if(fv&&tv){const my=y1+(y2-y1)*t;pts=[[x1,y1],[x1,my],[x2,my],[x2,y2]];}
+  else if(!fv&&!tv){const mx=x1+(x2-x1)*t;pts=[[x1,y1],[mx,y1],[mx,y2],[x2,y2]];}
   else if(fv) pts=[[x1,y1],[x1,y2],[x2,y2]];
   else        pts=[[x1,y1],[x2,y1],[x2,y2]];
   return pts;
@@ -794,8 +796,8 @@ function polylineMid(pts){
   }
   return{x:pts[0][0],y:pts[0][1]};
 }
-function straightPath(x1,y1,x2,y2,fp,tp){
-  const pts=routePts(x1,y1,x2,y2,fp,tp);
+function straightPath(x1,y1,x2,y2,fp,tp,midT){
+  const pts=routePts(x1,y1,x2,y2,fp,tp,midT);
   const last=pts.length-1,prev=pts[last-1],end=pts[last];
   const sb=setback(prev[0],prev[1],end[0],end[1],SETBACK);
   pts[last]=[sb.x,sb.y];
@@ -926,6 +928,7 @@ function arrowId(color){
   return id;
 }
 function paintEdge(e,sel){
+  if(e.hFrom){e.hFrom.style.display=sel?'':'none';e.hTo.style.display=sel?'':'none';}
   e.pathEl.setAttribute('stroke',sel?'#E8503A':(e.color||'#6B7280'));
   e.pathEl.setAttribute('stroke-width',sel?'2.5':'2');
   e.pathEl.setAttribute('marker-end',`url(#${sel?'arrow-sel':arrowId(e.color)})`);
@@ -1047,7 +1050,6 @@ function addNode(shape,x,y,label,fixedId){
 
   g.addEventListener('mousedown',onNodeMousedown);
   g.addEventListener('dblclick',onNodeDblclick);
-  g.addEventListener('mouseenter',()=>{if(mode==='connect')Object.values(portEls).forEach(d=>d.style.display='');});
   g.addEventListener('mouseleave',()=>{Object.values(portEls).forEach(d=>d.style.display='none');clearSnapHighlight();});
 
   Object.entries(portEls).forEach(([p,dot])=>{
@@ -1147,6 +1149,14 @@ nodeEditTa.addEventListener('input',()=>{
 function onNodeMousedown(e){
   if(e.target.classList.contains('port'))return;
   if(e.target.classList.contains('resize-handle'))return;
+  if(mode==='connect'){
+    // Draw-to-connect: press on a tile, drag to another tile. The sides are picked automatically.
+    e.stopPropagation();e.preventDefault();
+    closeNodeEdit();
+    conn={fromId:e.currentTarget.dataset.id,fromPort:null,auto:true,hover:null};
+    previewLn.style.display='';
+    return;
+  }
   if(mode!=='select')return;
   e.stopPropagation();
   closeNodeEdit();
@@ -1277,6 +1287,26 @@ document.addEventListener('mousemove',e=>{
     return;
   }
 
+  if(edgeDrag){moveEdgeDrag(e,pt);return;}
+
+  if(conn&&conn.auto){
+    const hit=nodeAt(pt,conn.fromId);
+    setHoverNode(hit);
+    const a=nodes[conn.fromId];if(!a)return;
+    let fp,tp,tgt;
+    if(hit){const ap=autoPorts(conn.fromId,hit);fp=ap.fp;tp=ap.tp;tgt=portPos(hit,tp);}
+    else{
+      const dx=pt.x-(a.x+a.w/2),dy=pt.y-(a.y+a.h/2);
+      const horiz=Math.abs(dx)/(a.w/2)>Math.abs(dy)/(a.h/2);
+      fp=horiz?(dx>0?'e':'w'):(dy>0?'s':'n');
+      tp=horiz?(dx>0?'w':'e'):(dy>0?'n':'s');tgt=pt;
+    }
+    const src=portPos(conn.fromId,fp);
+    previewLn.style.display='';
+    previewLn.setAttribute('d',straightPath(src.x,src.y,tgt.x,tgt.y,fp,tp));
+    return;
+  }
+
   if(conn){
     const useLineSnap=snapEnabled!==e.shiftKey;
     snapPort=null;let bestD=useLineSnap?28:10;
@@ -1307,6 +1337,18 @@ document.addEventListener('mouseup',e=>{
   if(resize){resize=null;markChanged();return;}
   if(drag){_lastDragMoved=!!drag.moved;drag=null;hideSnapGuides();markChanged();return;}
   if(selBox){selBox=null;selBoxEl.style.display='none';return;}
+  if(edgeDrag){finishEdgeDrag();return;}
+  if(conn&&conn.auto){
+    const target=conn.hover||nodeAt(pt,conn.fromId),from=conn.fromId;
+    setHoverNode(null);
+    previewLn.style.display='none';previewLn.setAttribute('d','');
+    conn=null;snapPort=null;
+    if(target&&nodes[target]&&nodes[from]){
+      if(edges.some(x=>x.from===from&&x.to===target))showToast('Those tiles are already connected','warn');
+      else{const ap=autoPorts(from,target);createEdge(from,ap.fp,target,ap.tp,{});}
+    }
+    return;
+  }
   if(conn){
     clearSnapHighlight();
     previewLn.style.display='none';previewLn.setAttribute('d','');
@@ -1342,7 +1384,16 @@ function createEdge(fromId,fromPort,toId,toPort,opts){
   labelG.appendChild(labelBg);labelG.appendChild(labelTx);
   labelG.style.display='none';
   edgesG.appendChild(labelG);
-  const edge={id,from:fromId,fromPort,to:toId,toPort,label:opts.label||'',color,dashed:!!opts.dashed,pathEl,hitEl,labelG,labelBg,labelTx};
+  // End-point handles (shown while the connector is selected) – drag to reconnect
+  const mkHandle=kind=>{
+    const h=svgEl('circle',{r:6,fill:'#fff',stroke:'#E8503A','stroke-width':'2',class:'edge-handle','data-kind':kind,style:'cursor:grab;display:none;'});
+    h.addEventListener('mousedown',ev=>startEdgeDrag(ev,id,kind));
+    viewport.appendChild(h);return h;
+  };
+  const hFrom=mkHandle('from'),hTo=mkHandle('to');
+  const midT=(typeof opts.midT==='number'&&isFinite(opts.midT))?opts.midT:null;
+  const edge={id,from:fromId,fromPort,to:toId,toPort,label:opts.label||'',color,dashed:!!opts.dashed,midT,pathEl,hitEl,labelG,labelBg,labelTx,hFrom,hTo};
+  [pathEl,hitEl].forEach(el=>el.addEventListener('mousedown',ev=>startEdgeDrag(ev,id,'mid')));
   edges.push(edge);redrawEdge(edge);updateStatus();
   markChanged();
   return edge;
@@ -1377,12 +1428,102 @@ function finishFreehand(pts,endPt){
   conn={fromId:fromNode,fromPort};finishConn(toNode,toPort);conn=null;
 }
 
+// Topmost tile under a world point (optionally ignoring one tile)
+function nodeAt(pt,excludeId){
+  const list=Object.values(nodes).filter(n=>n.id!==excludeId&&pt.x>=n.x-4&&pt.x<=n.x+n.w+4&&pt.y>=n.y-4&&pt.y<=n.y+n.h+4);
+  if(!list.length)return null;
+  list.sort((a,b)=>Math.hypot(pt.x-a.x-a.w/2,pt.y-a.y-a.h/2)-Math.hypot(pt.x-b.x-b.w/2,pt.y-b.y-b.h/2));
+  return list[0].id;
+}
+// Pick the sides of two tiles that face each other
+function autoPorts(aId,bId){
+  const a=nodes[aId],b=nodes[bId];
+  const dx=(b.x+b.w/2)-(a.x+a.w/2),dy=(b.y+b.h/2)-(a.y+a.h/2);
+  const nx=Math.abs(dx)/((a.w+b.w)/2),ny=Math.abs(dy)/((a.h+b.h)/2);
+  const horiz=nx>ny;
+  return horiz?{fp:dx>0?'e':'w',tp:dx>0?'w':'e'}:{fp:dy>0?'s':'n',tp:dy>0?'n':'s'};
+}
+// Which side of tile `nodeId` an end should attach to when dropped at pt:
+// the side the pointer is close to, otherwise the side facing the other end of the connector.
+function nearestSidePort(nodeId,pt,otherId){
+  const n=nodes[nodeId];
+  const d={n:pt.y-n.y,s:n.y+n.h-pt.y,w:pt.x-n.x,e:n.x+n.w-pt.x};
+  let best=null,bd=Infinity;
+  Object.keys(d).forEach(p=>{if(d[p]<bd){bd=d[p];best=p;}});
+  if(bd<=22||!otherId||!nodes[otherId])return best;
+  const ap=autoPorts(otherId,nodeId);return ap.tp;
+}
+function setHoverNode(id){
+  if(conn&&conn.hover&&conn.hover!==id&&nodes[conn.hover])highlightNode(conn.hover,selected.has(conn.hover));
+  if(edgeDrag&&edgeDrag.hover&&edgeDrag.hover!==id&&nodes[edgeDrag.hover])highlightNode(edgeDrag.hover,selected.has(edgeDrag.hover));
+  const owner=conn||edgeDrag;
+  if(owner){owner.hover=id;if(id&&nodes[id])highlightNode(id,true);}
+}
+
+// ── Dragging an existing connector ───────────────────────────────────────────
+// kind 'mid'  → slide the middle segment;  'from'/'to' → pull an end onto another tile/side
+let edgeDrag=null;
+function startEdgeDrag(ev,id,kind){
+  if(mode!=='select'||ev.button!==0)return;
+  const edge=edges.find(e=>e.id===id);if(!edge)return;
+  ev.stopPropagation();ev.preventDefault();
+  edgeDrag={id,kind,moved:false,startX:ev.clientX,startY:ev.clientY,
+    orig:{from:edge.from,fromPort:edge.fromPort,to:edge.to,toPort:edge.toPort,midT:edge.midT},hover:null};
+}
+function moveEdgeDrag(e,pt){
+  const d=edgeDrag,edge=edges.find(x=>x.id===d.id);
+  if(!edge){edgeDrag=null;return;}
+  if(!d.moved){
+    if(Math.hypot(e.clientX-d.startX,e.clientY-d.startY)<4)return;
+    d.moved=true;
+    if(!selectedEdges.has(edge.id)){deselectAll();selectedEdges.add(edge.id);highlightEdge(edge.id,true);requestInspectorUpdate();}
+  }
+  if(d.kind==='mid'){
+    const p1=portPos(edge.from,edge.fromPort),p2=portPos(edge.to,edge.toPort);
+    const fv=edge.fromPort==='n'||edge.fromPort==='s',tv=edge.toPort==='n'||edge.toPort==='s';
+    let t=null;
+    if(fv&&tv&&Math.abs(p2.y-p1.y)>=20)t=(pt.y-p1.y)/(p2.y-p1.y);
+    else if(!fv&&!tv&&Math.abs(p2.x-p1.x)>=20)t=(pt.x-p1.x)/(p2.x-p1.x);
+    if(t==null)return;
+    t=Math.max(-1,Math.min(2,t));
+    const span=Math.abs(fv&&tv?p2.y-p1.y:p2.x-p1.x);
+    if(snapEnabled!==e.shiftKey&&Math.abs(t-0.5)*span<8)t=0.5;   // snap back to centre
+    edge.midT=Math.abs(t-0.5)<0.001?null:t;
+    redrawEdge(edge);
+    return;
+  }
+  // reconnect an end
+  const other=d.kind==='from'?edge.to:edge.from;
+  const hit=nodeAt(pt,other);
+  setHoverNode(hit);
+  if(hit){
+    const port=nearestSidePort(hit,pt,other);
+    if(d.kind==='from'){edge.from=hit;edge.fromPort=port;}else{edge.to=hit;edge.toPort=port;}
+  }else{
+    Object.assign(edge,{from:d.orig.from,fromPort:d.orig.fromPort,to:d.orig.to,toPort:d.orig.toPort});
+  }
+  edge.midT=null;
+  redrawEdge(edge);
+}
+function finishEdgeDrag(){
+  const d=edgeDrag;if(!d)return;
+  setHoverNode(null);edgeDrag=null;
+  const edge=edges.find(x=>x.id===d.id);if(!edge||!d.moved)return;
+  const changed=edge.from!==d.orig.from||edge.fromPort!==d.orig.fromPort||edge.to!==d.orig.to||edge.toPort!==d.orig.toPort;
+  const dup=changed&&edges.some(o=>o!==edge&&o.from===edge.from&&o.fromPort===edge.fromPort&&o.to===edge.to&&o.toPort===edge.toPort);
+  if(dup||edge.from===edge.to){
+    Object.assign(edge,{from:d.orig.from,fromPort:d.orig.fromPort,to:d.orig.to,toPort:d.orig.toPort,midT:d.orig.midT});
+    redrawEdge(edge);showToast('Those tiles are already connected that way','warn');return;
+  }
+  if(changed||edge.midT!==d.orig.midT)markChanged();
+}
+
 function bestPortForDir(dx,dy){
   if(Math.abs(dx)>Math.abs(dy))return dx>0?'e':'w';
   return dy>0?'s':'n';
 }
 
-function cancelConn(){conn=null;snapPort=null;previewLn.style.display='none';previewLn.setAttribute('d','');clearSnapHighlight();}
+function cancelConn(){if(conn&&conn.hover)setHoverNode(null);conn=null;snapPort=null;previewLn.style.display='none';previewLn.setAttribute('d','');clearSnapHighlight();}
 function cancelFreehand(){freehand=null;freehandP.style.display='none';freehandP.setAttribute('d','');}
 
 function updateSnapHighlight(){
@@ -1425,11 +1566,15 @@ function edgeInBox(edge,rx,ry,rw,rh){
 // ── Edge drawing ──────────────────────────────────────────────────────────────
 function redrawEdge(edge){
   const p1=portPos(edge.from,edge.fromPort),p2=portPos(edge.to,edge.toPort);
-  const d=straightPath(p1.x,p1.y,p2.x,p2.y,edge.fromPort,edge.toPort);
+  const d=straightPath(p1.x,p1.y,p2.x,p2.y,edge.fromPort,edge.toPort,edge.midT);
   edge.pathEl.setAttribute('d',d);
+  if(edge.hFrom){
+    edge.hFrom.setAttribute('cx',p1.x);edge.hFrom.setAttribute('cy',p1.y);
+    edge.hTo.setAttribute('cx',p2.x);edge.hTo.setAttribute('cy',p2.y);
+  }
   if(edge.hitEl)edge.hitEl.setAttribute('d',d);
   if(edge.label){
-    const mid=polylineMid(routePts(p1.x,p1.y,p2.x,p2.y,edge.fromPort,edge.toPort));
+    const mid=polylineMid(routePts(p1.x,p1.y,p2.x,p2.y,edge.fromPort,edge.toPort,edge.midT));
     const mx=mid.x,my=mid.y;
     edge.labelTx.textContent=edge.label;
     const tw=edge.label.length*6.2+10, th=16;
@@ -1480,12 +1625,12 @@ function deleteSelected(){
   if(!selected.size&&!selectedEdges.size)return;
   selectedEdges.forEach(eid=>{
     const idx=edges.findIndex(e=>e.id===eid);
-    if(idx!==-1){edges[idx].pathEl.remove();edges[idx].hitEl?.remove();edges[idx].labelG?.remove();edges.splice(idx,1);}
+    if(idx!==-1){edges[idx].pathEl.remove();edges[idx].hitEl?.remove();edges[idx].hFrom?.remove();edges[idx].hTo?.remove();edges[idx].labelG?.remove();edges.splice(idx,1);}
   });
   selectedEdges.clear();
   selected.forEach(id=>{
     edges=edges.filter(edge=>{
-      if(edge.from===id||edge.to===id){edge.pathEl.remove();edge.hitEl?.remove();edge.labelG?.remove();return false;}
+      if(edge.from===id||edge.to===id){edge.pathEl.remove();edge.hitEl?.remove();edge.hFrom?.remove();edge.hTo?.remove();edge.labelG?.remove();return false;}
       return true;
     });
     nodes[id]?.g.remove();delete nodes[id];
@@ -1602,6 +1747,7 @@ function edgeToData(e){
   const d={id:e.id,from:e.from,fromPort:e.fromPort,to:e.to,toPort:e.toPort,label:e.label};
   if(e.color)d.color=e.color;
   if(e.dashed)d.dashed=true;
+  if(e.midT!=null)d.midT=e.midT;
   return d;
 }
 
@@ -1626,7 +1772,7 @@ function wipeCanvas(){
   abortNodeEdit();
   Object.values(nodes).forEach(n=>n.g.remove());
   nodes={};selected.clear();selectedEdges.clear();
-  edges.forEach(e=>{e.pathEl.remove();e.hitEl?.remove();e.labelG?.remove();});
+  edges.forEach(e=>{e.pathEl.remove();e.hitEl?.remove();e.hFrom?.remove();e.hTo?.remove();e.labelG?.remove();});
   edges=[];nodeCounter=0;edgeCounter=0;
 }
 
@@ -1647,7 +1793,7 @@ function applySnapshot(data){
     });
     (data.edges||[]).forEach(e=>{
       if(!e||!e.from||!e.to)return;
-      createEdge(e.from,e.fromPort||'s',e.to,e.toPort||'n',{id:e.id,label:e.label,color:e.color,dashed:e.dashed});
+      createEdge(e.from,e.fromPort||'s',e.to,e.toPort||'n',{id:e.id,label:e.label,color:e.color,dashed:e.dashed,midT:e.midT});
     });
     redrawEdges();
     updateStatus();
@@ -2339,7 +2485,7 @@ function importSVGText(svgText,skipGuard){
       if(seen.has(key))return; seen.add(key);
       if(!importedNodes[ed.from]&&!nodes[ed.from])return;
       if(!importedNodes[ed.to]&&!nodes[ed.to])return;
-      createEdge(ed.from,ed.fromPort,ed.to,ed.toPort,{id:ed.id,label:ed.label,color:ed.color,dashed:ed.dashed});
+      createEdge(ed.from,ed.fromPort,ed.to,ed.toPort,{id:ed.id,label:ed.label,color:ed.color,dashed:ed.dashed,midT:ed.midT});
     });
 
     redrawEdges();
@@ -2438,7 +2584,7 @@ function pasteClipboard(){
       idMap[nd.id]=id;newIds.push(id);
     });
     (data.edges||[]).forEach(e=>{
-      if(idMap[e.from]&&idMap[e.to])createEdge(idMap[e.from],e.fromPort,idMap[e.to],e.toPort,{label:e.label,color:e.color,dashed:e.dashed});
+      if(idMap[e.from]&&idMap[e.to])createEdge(idMap[e.from],e.fromPort,idMap[e.to],e.toPort,{label:e.label,color:e.color,dashed:e.dashed,midT:e.midT});
     });
   });
   deselectAll();
@@ -2733,8 +2879,10 @@ function assignLayoutPorts(layer){
     if(n.shape!=='decision'||list.length<2)return;
     list.sort((p,q)=>(nodes[p.to].x+nodes[p.to].w/2)-(nodes[q.to].x+nodes[q.to].w/2));
     const first=list[0],last=list[list.length-1];
-    if(nodes[first.to].x+nodes[first.to].w/2<n.x)first.fromPort='w';
-    if(nodes[last.to].x+nodes[last.to].w/2>n.x+n.w)last.fromPort='e';
+    // Decision with 2+ branches: leftmost leaves from the left corner, rightmost from the right corner
+    const cx=n.x+n.w/2;
+    if(nodes[first.to].x+nodes[first.to].w/2<cx-1)first.fromPort='w';
+    if(nodes[last.to].x+nodes[last.to].w/2>cx+1)last.fromPort='e';
   });
 }
 
@@ -2776,6 +2924,22 @@ function autoLayout(){
     Object.assign(layerOf,res.layer);
     cursorX+=res.width+COMP_GAP;
   });
+  // Make room for decisions: branches that leave a diamond's side corners must sit beyond those corners
+  ids.filter(id=>nodes[id].shape==='decision').sort((a,b)=>layerOf[a]-layerOf[b]).forEach(did=>{
+    const D=nodes[did],L=layerOf[did],dcx=placed[did].x+D.w/2;
+    const kids=[...new Set(edges.filter(e=>e.from===did&&layerOf[e.to]>L).map(e=>e.to))];
+    if(kids.length<2)return;
+    const kcx=k=>placed[k].x+nodes[k].w/2;
+    kids.sort((a,b)=>kcx(a)-kcx(b));
+    const need=D.w/2+28;
+    const delta=Math.max(0,need-(dcx-kcx(kids[0])),need-(kcx(kids[kids.length-1])-dcx));
+    if(delta<=0)return;
+    ids.forEach(id=>{
+      if(comp[id]!==comp[did]||layerOf[id]<=L)return;
+      const c=placed[id].x+nodes[id].w/2;
+      if(c<dcx-1)placed[id].x-=delta;else if(c>dcx+1)placed[id].x+=delta;
+    });
+  });
   let mx=Infinity,my=Infinity;
   Object.values(placed).forEach(p=>{mx=Math.min(mx,p.x);my=Math.min(my,p.y);});
 
@@ -2785,6 +2949,7 @@ function autoLayout(){
       n.x=placed[id].x-mx+ax;n.y=placed[id].y-my+ay;
       n.g.setAttribute('transform',`translate(${n.x},${n.y})`);
     });
+    edges.forEach(e=>{e.midT=null;});
     assignLayoutPorts(layerOf);
     redrawEdges();
     markChanged();
@@ -2820,7 +2985,7 @@ function buildExport(){
   // Plain white background instead of the editor's dot grid
   const cloneBg=clone.querySelector('#canvas-bg-rect');
   if(cloneBg)cloneBg.setAttribute('fill','#ffffff');
-  clone.querySelectorAll('#snap-guide-v,#snap-guide-h,#preview-line,#freehand-path,.port,.resize-handle,.node-badge').forEach(el=>el.remove());
+  clone.querySelectorAll('#snap-guide-v,#snap-guide-h,#preview-line,#freehand-path,.port,.resize-handle,.node-badge,.edge-handle').forEach(el=>el.remove());
   clone.querySelectorAll('path[stroke="transparent"]').forEach(el=>el.remove());
   clone.querySelectorAll('.edge-label-g').forEach(el=>{
     if(el.style.display==='none')el.remove();
@@ -2940,7 +3105,7 @@ function openHelpModal(){
       ${row('Copy',['Ctrl','C'])}${row('Paste',['Ctrl','V'])}
       ${row('Duplicate',['Ctrl','D'])}${row('Select all',['Ctrl','A'])}
       ${row('Delete',['Del'])}${row('Save',['Ctrl','S'])}
-      ${row('Edit text',['Dbl-click'])}${row('Label a connector',['Dbl-click'])}
+      ${row('Move a connector',['Drag line'])}${row('Reconnect an end',['Drag ●'])}${row('Edit text',['Dbl-click'])}${row('Label a connector',['Dbl-click'])}
       ${row('Multi-select',['Shift','click'])}${row('Flip snapping while dragging',['Shift'])}
       <h4>View</h4>
       ${row('Pan',['Space','drag'])}${row('Zoom',['Scroll'])}
