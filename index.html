@@ -432,7 +432,7 @@
   <button class="mode-btn" id="btn-undo" onclick="undo()" title="Undo (Ctrl+Z)" disabled>&#8630; Undo</button>
   <button class="mode-btn" id="btn-redo" onclick="redo()" title="Redo (Ctrl+Shift+Z)" disabled>&#8631; Redo</button>
   <div class="sep"></div>
-  <button class="mode-btn" id="btn-tidy" onclick="autoLayout()" title="Auto-arrange tiles into a tidy top-to-bottom layout (undoable)">&#10024; Tidy <span class="kbd">L</span></button>
+  <button class="mode-btn" id="btn-tidy" onclick="autoLayout()" title="Auto-arrange tiles top-to-bottom and resize them to fit their text (undoable)">&#10024; Tidy <span class="kbd">L</span></button>
   <div class="spacer"></div>
   <span id="save-status" class="blank" onclick="statusClick()"></span>
   <button class="mode-btn" onclick="openHelpModal()" title="Shortcuts &amp; settings (?)">?</button>
@@ -669,8 +669,10 @@ function wrapText(text, maxW){
   return lines.length?lines:[''];
 }
 
-function buildTextEl(label, w, h){
-  const innerW=w-PAD_X*2;
+const DIAMOND_TEXT_FRAC=0.6;
+function textAreaW(shape,w){ return shape==='decision' ? w*DIAMOND_TEXT_FRAC : w-PAD_X*2; }
+function buildTextEl(label, w, h, shape){
+  const innerW=textAreaW(shape,w);
   const lines=wrapText(label, innerW);
   const totalH=lines.length*LINE_H;
   const startY=h/2 - totalH/2 + LINE_H*0.8;
@@ -694,7 +696,7 @@ function buildTextEl(label, w, h){
 function refreshTextEl(id){
   const n=nodes[id];if(!n)return;
   if(n.textEl)n.textEl.remove();
-  n.textEl=buildTextEl(n.label, n.w, n.h);
+  n.textEl=buildTextEl(n.label, n.w, n.h, n.shape);
   n.g.insertBefore(n.textEl, n.portEls['n']);
 }
 
@@ -963,6 +965,40 @@ function updateNodeGeometry(id){
   updateNodeBadge(id);
 }
 
+// ── Auto-fit: size a tile so its text fits ────────────────────────────────────
+// shrink=false → only grows the tile (used while typing); shrink=true → snaps to the smallest
+// comfortable size, never below the default tile size (used by Tidy).
+function fitSizeFor(shape,label,curW,curH,shrink){
+  const base=nodeDims(shape);
+  let w=shrink?base.w:Math.max(curW,base.w);
+  let h=shrink?base.h:Math.max(curH,base.h);
+  const longest=Math.max(0,...String(label).split(/\s+/).map(measureText));
+  // Tidy: widen long labels (up to a cap) so tiles stay roughly balanced instead of tall and thin
+  if(shrink){
+    const cap=shape==='decision'?240:260;
+    while(w<cap&&wrapText(label,textAreaW(shape,w)).length>3)w+=20;
+  }
+  if(shape==='decision'){
+    w=Math.max(w,Math.ceil((longest+8)/DIAMOND_TEXT_FRAC));
+    const lines=wrapText(label,textAreaW(shape,w)).length;
+    h=Math.max(h,Math.ceil(lines*LINE_H/0.5)+PAD_Y*2);
+  }else{
+    w=Math.max(w,Math.ceil(longest+PAD_X*2+2));
+    const lines=wrapText(label,textAreaW(shape,w)).length;
+    h=Math.max(h,lines*LINE_H+PAD_Y*2+4);
+  }
+  return{w:Math.round(w),h:Math.round(h)};
+}
+// Returns true if the size changed
+function fitNodeToText(id,shrink,labelOverride){
+  const n=nodes[id];if(!n)return false;
+  const r=fitSizeFor(n.shape,labelOverride!=null?labelOverride:n.label,n.w,n.h,shrink);
+  if(r.w===n.w&&r.h===n.h)return false;
+  n.w=r.w;n.h=r.h;
+  updateNodeGeometry(id);
+  return true;
+}
+
 // ── Add node ──────────────────────────────────────────────────────────────────
 function nodeDims(shape){
   if(shape==='decision')return{w:DIAM_W,h:DIAM_H};
@@ -996,7 +1032,7 @@ function addNode(shape,x,y,label,fixedId){
   }
   g.appendChild(bodyEl);
 
-  const textEl=buildTextEl(label,w,h);
+  const textEl=buildTextEl(label,w,h,shape);
   g.appendChild(textEl);
 
   const portEls={};
@@ -1072,6 +1108,7 @@ function closeNodeEdit(){
     n.label=newLabel;
     if(n.textEl)n.textEl.style.display='';
     refreshTextEl(id);
+    fitNodeToText(id,false);
     redrawEdges();
     markChanged();
   }
@@ -1096,6 +1133,15 @@ nodeEditTa.addEventListener('keydown',e=>{
   e.stopPropagation();
 });
 nodeEditTa.addEventListener('blur',()=>{ setTimeout(closeNodeEdit, 80); });
+nodeEditTa.addEventListener('input',()=>{
+  const id=editingNodeId,n=id&&nodes[id];if(!n)return;
+  if(fitNodeToText(id,false,nodeEditTa.value.trim()||' ')){
+    if(n.textEl)n.textEl.style.display='none';   // the textarea is showing the text meanwhile
+    nodeEditTa.style.width=(n.w*zoom)+'px';
+    nodeEditTa.style.height=(n.h*zoom)+'px';
+    redrawEdges();
+  }
+});
 
 // ── Node interactions ─────────────────────────────────────────────────────────
 function onNodeMousedown(e){
@@ -2695,7 +2741,8 @@ function assignLayoutPorts(layer){
 function autoLayout(){
   const ids=Object.keys(nodes);
   if(!ids.length){showToast('Add some tiles first','warn');return;}
-  cancelConn();cancelFreehand();
+  cancelConn();cancelFreehand();closeNodeEdit();
+  ids.forEach(id=>fitNodeToText(id,true));   // size every tile to fit its text first
   const GAPX=56,GAPY=72,COMP_GAP=96;
   let ax=Infinity,ay=Infinity;
   ids.forEach(id=>{ax=Math.min(ax,nodes[id].x);ay=Math.min(ay,nodes[id].y);});
@@ -2743,7 +2790,7 @@ function autoLayout(){
     markChanged();
   });
   fitView();
-  showToast('Tidied layout — Ctrl+Z to undo','ok');
+  showToast('Tidied layout & fitted tiles to text — Ctrl+Z to undo','ok');
 }
 
 // ══════════════════════════════════════════════════════════════════════════════
