@@ -827,6 +827,7 @@ function setMode(m){
   document.getElementById('btn-connect').classList.toggle('active',m==='connect');
   document.getElementById('st-mode').textContent=m==='select'?'Select':'Connect';
   wrap.classList.toggle('connect-mode',m==='connect');
+  startSnap=null;clearSnapHighlight();
   if(m==='select'){cancelConn();cancelFreehand();}
 }
 
@@ -1015,6 +1016,7 @@ function addNode(shape,x,y,label,fixedId){
   const numPart=parseInt((id||'').replace(/\D+/,''))||0;
   if(numPart>nodeCounter)nodeCounter=numPart;
   const{w,h}=nodeDims(shape);
+  const userAdded=(x==null);
   if(x==null){
     // place at viewport center in world coords
     x=(wrap.offsetWidth/2-panX)/zoom - w/2 + (Math.random()*40-20);
@@ -1050,14 +1052,15 @@ function addNode(shape,x,y,label,fixedId){
 
   g.addEventListener('mousedown',onNodeMousedown);
   g.addEventListener('dblclick',onNodeDblclick);
-  g.addEventListener('mouseleave',()=>{Object.values(portEls).forEach(d=>d.style.display='none');clearSnapHighlight();});
+  g.addEventListener('mouseenter',()=>{if(mode==='connect')Object.values(portEls).forEach(d=>d.style.display='');});
+  g.addEventListener('mouseleave',()=>{if(conn)return;Object.values(portEls).forEach(d=>d.style.display='none');clearSnapHighlight();});
 
   Object.entries(portEls).forEach(([p,dot])=>{
     dot.addEventListener('mousedown',e=>{
       if(mode!=='connect')return;
       e.stopPropagation();e.preventDefault();
       const pt=portPos(id,p);
-      conn={fromId:id,fromPort:p};
+      startSnap=null;conn={fromId:id,fromPort:p,hover:null};
       previewLn.style.display='';
       previewLn.setAttribute('d',`M${pt.x},${pt.y} L${pt.x},${pt.y}`);
     });
@@ -1077,6 +1080,7 @@ function addNode(shape,x,y,label,fixedId){
   nodes[id]={id,shape,x,y,w,h,label,g,bodyEl,textEl,portEls,resizeEl,color:null,note:'',link:'',badgeEl:null};
   updateStatus();
   markChanged();
+  if(userAdded&&!_restoring)selectNode(id,false);   // a fresh tile is selected, ready to be dragged
   return id;
 }
 
@@ -1153,8 +1157,8 @@ function onNodeMousedown(e){
     // Draw-to-connect: press on a tile, drag to another tile. The sides are picked automatically.
     e.stopPropagation();e.preventDefault();
     closeNodeEdit();
-    conn={fromId:e.currentTarget.dataset.id,fromPort:null,auto:true,hover:null};
-    previewLn.style.display='';
+    const nid=e.currentTarget.dataset.id;
+    beginConn(nid,startSnap&&startSnap.nodeId===nid?startSnap.port:null);
     return;
   }
   if(mode!=='select')return;
@@ -1203,6 +1207,9 @@ wrap.addEventListener('mousedown',e=>{
   }
   if(e.target===nodeEditTa)return;
   closeNodeEdit();
+  if(mode==='connect'&&e.button===0&&startSnap&&nodes[startSnap.nodeId]){
+    e.preventDefault();beginConn(startSnap.nodeId,startSnap.port);return;
+  }
   const isBackground=e.target===wrap||e.target===mainSvg||e.target===edgesG||e.target===nodesG||e.target===selBoxEl
     ||e.target===viewport||e.target.id==='canvas-bg-rect';
   if(!isBackground)return;
@@ -1234,6 +1241,8 @@ document.addEventListener('mousemove',e=>{
   }
 
   const pt=c2w(e.clientX,e.clientY);
+
+  if(mode==='connect'&&!conn&&!drag&&!resize&&!selBox&&!freehand&&!edgeDrag)updateStartSnap(pt,e.shiftKey);
 
   if(resize){
     const n=nodes[resize.nodeId];if(!n){resize=null;return;}
@@ -1289,38 +1298,50 @@ document.addEventListener('mousemove',e=>{
 
   if(edgeDrag){moveEdgeDrag(e,pt);return;}
 
-  if(conn&&conn.auto){
-    const hit=nodeAt(pt,conn.fromId);
-    setHoverNode(hit);
+  if(conn){
     const a=nodes[conn.fromId];if(!a)return;
-    let fp,tp,tgt;
-    if(hit){const ap=autoPorts(conn.fromId,hit);fp=ap.fp;tp=ap.tp;tgt=portPos(hit,tp);}
-    else{
-      const dx=pt.x-(a.x+a.w/2),dy=pt.y-(a.y+a.h/2);
-      const horiz=Math.abs(dx)/(a.w/2)>Math.abs(dy)/(a.h/2);
-      fp=horiz?(dx>0?'e':'w'):(dy>0?'s':'n');
-      tp=horiz?(dx>0?'w':'e'):(dy>0?'n':'s');tgt=pt;
+    const useSnap=snapEnabled!==e.shiftKey;
+    const hit=nodeAt(pt,conn.fromId,18/zoom);
+    let fp=conn.fromPort,tp=null,tgt=pt,tgtNode=null;
+    snapPort=null;
+    // Magnet: the nearest connection dot (on ANY other tile) within reach captures the cursor
+    if(useSnap){
+      let best=Infinity;
+      Object.values(nodes).forEach(n=>{
+        if(n.id===conn.fromId)return;
+        // Cursor already over the tile → only a dot you're clearly aiming at captures it (else the
+        // facing side is used). Just outside a tile → a wide magnet pulls the cursor to the nearest dot.
+        const inside=pt.x>=n.x&&pt.x<=n.x+n.w&&pt.y>=n.y&&pt.y<=n.y+n.h;
+        const R=(inside?12:30)/zoom;
+        const face=autoPorts(conn.fromId,n.id).tp;
+        ['n','s','e','w'].forEach(q=>{
+          const pp=portPos(n.id,q);
+          // a dot on the side that faces us gets a small head start over the others
+          const d=Math.hypot(pp.x-pt.x,pp.y-pt.y)-(q===face?8/zoom:0);
+          if(d<R&&d<best){best=d;tgtNode=n.id;tp=q;}
+        });
+      });
     }
+    if(!tgtNode&&hit){
+      // Inside a tile with no dot in reach: use the side facing the other tile
+      tgtNode=hit;tp=autoPorts(conn.fromId,hit).tp;
+    }
+    if(tgtNode){
+      const ap=autoPorts(conn.fromId,tgtNode);
+      if(!fp)fp=ap.fp;
+      tgt=portPos(tgtNode,tp);
+      snapPort={nodeId:tgtNode,port:tp};
+    }else if(!fp){
+      const dx=pt.x-(a.x+a.w/2),dy=pt.y-(a.y+a.h/2);
+      fp=Math.abs(dx)/(a.w/2)>Math.abs(dy)/(a.h/2)?(dx>0?'e':'w'):(dy>0?'s':'n');
+    }
+    conn.fp=fp;
+    setHoverNode(tgtNode);
+    updateSnapHighlight();
     const src=portPos(conn.fromId,fp);
     previewLn.style.display='';
-    previewLn.setAttribute('d',straightPath(src.x,src.y,tgt.x,tgt.y,fp,tp));
-    return;
-  }
-
-  if(conn){
-    const useLineSnap=snapEnabled!==e.shiftKey;
-    snapPort=null;let bestD=useLineSnap?28:10;
-    Object.values(nodes).forEach(n=>{
-      if(n.id===conn.fromId)return;
-      ['n','s','e','w'].forEach(p=>{
-        const pp=portPos(n.id,p),d=Math.hypot(pp.x-pt.x,pp.y-pt.y);
-        if(d<bestD){bestD=d;snapPort={nodeId:n.id,port:p};}
-      });
-    });
-    updateSnapHighlight();
-    const src=portPos(conn.fromId,conn.fromPort);
-    const tgt=snapPort?portPos(snapPort.nodeId,snapPort.port):pt;
-    previewLn.setAttribute('d',straightPath(src.x,src.y,tgt.x,tgt.y,conn.fromPort,snapPort?.port||'n'));
+    const tpv=tp||({n:'s',s:'n',e:'w',w:'e'}[fp]);
+    previewLn.setAttribute('d',straightPath(src.x,src.y,tgt.x,tgt.y,fp,tpv));
     return;
   }
 
@@ -1338,22 +1359,16 @@ document.addEventListener('mouseup',e=>{
   if(drag){_lastDragMoved=!!drag.moved;drag=null;hideSnapGuides();markChanged();return;}
   if(selBox){selBox=null;selBoxEl.style.display='none';return;}
   if(edgeDrag){finishEdgeDrag();return;}
-  if(conn&&conn.auto){
-    const target=conn.hover||nodeAt(pt,conn.fromId),from=conn.fromId;
-    setHoverNode(null);
+  if(conn){
+    const from=conn.fromId,fp=conn.fp||conn.fromPort,wasAuto=!conn.fromPort,sp=snapPort;
+    setHoverNode(null);clearSnapHighlight();
     previewLn.style.display='none';previewLn.setAttribute('d','');
     conn=null;snapPort=null;
-    if(target&&nodes[target]&&nodes[from]){
-      if(edges.some(x=>x.from===from&&x.to===target))showToast('Those tiles are already connected','warn');
-      else{const ap=autoPorts(from,target);createEdge(from,ap.fp,target,ap.tp,{});}
+    if(sp&&nodes[sp.nodeId]&&nodes[from]&&fp){
+      if(wasAuto&&edges.some(x=>x.from===from&&x.to===sp.nodeId))showToast('Those tiles are already connected','warn');
+      else createEdge(from,fp,sp.nodeId,sp.port,{});
     }
     return;
-  }
-  if(conn){
-    clearSnapHighlight();
-    previewLn.style.display='none';previewLn.setAttribute('d','');
-    if(snapPort)finishConn(snapPort.nodeId,snapPort.port);
-    conn=null;snapPort=null;return;
   }
   if(freehand){
     freehandP.style.display='none';freehandP.setAttribute('d','');
@@ -1429,8 +1444,9 @@ function finishFreehand(pts,endPt){
 }
 
 // Topmost tile under a world point (optionally ignoring one tile)
-function nodeAt(pt,excludeId){
-  const list=Object.values(nodes).filter(n=>n.id!==excludeId&&pt.x>=n.x-4&&pt.x<=n.x+n.w+4&&pt.y>=n.y-4&&pt.y<=n.y+n.h+4);
+function nodeAt(pt,excludeId,margin){
+  const m=margin==null?4:margin;
+  const list=Object.values(nodes).filter(n=>n.id!==excludeId&&pt.x>=n.x-m&&pt.x<=n.x+n.w+m&&pt.y>=n.y-m&&pt.y<=n.y+n.h+m);
   if(!list.length)return null;
   list.sort((a,b)=>Math.hypot(pt.x-a.x-a.w/2,pt.y-a.y-a.h/2)-Math.hypot(pt.x-b.x-b.w/2,pt.y-b.y-b.h/2));
   return list[0].id;
@@ -1458,6 +1474,48 @@ function setHoverNode(id){
   if(edgeDrag&&edgeDrag.hover&&edgeDrag.hover!==id&&nodes[edgeDrag.hover])highlightNode(edgeDrag.hover,selected.has(edgeDrag.hover));
   const owner=conn||edgeDrag;
   if(owner){owner.hover=id;if(id&&nodes[id])highlightNode(id,true);}
+}
+
+// ── Magnet at the START of a connection ───────────────────────────────────────
+// In Connect mode, hovering near (or on) a tile shows its dots; the dot closest to the cursor
+// lights up and a press there starts the connection from exactly that dot.
+let startSnap=null;
+function resetDots(id,keepVisible){
+  const n=nodes[id];if(!n)return;
+  Object.values(n.portEls).forEach(d=>{d.setAttribute('fill','#fff');d.setAttribute('stroke','#9CA3AF');d.setAttribute('r',5);if(!keepVisible)d.style.display='none';});
+}
+function updateStartSnap(pt,shift){
+  let best=null,bd=Infinity;
+  if(snapEnabled!==shift){
+    Object.values(nodes).forEach(n=>{
+      const inside=pt.x>=n.x&&pt.x<=n.x+n.w&&pt.y>=n.y&&pt.y<=n.y+n.h;
+      const R=(inside?12:30)/zoom;
+      ['n','s','e','w'].forEach(q=>{
+        const pp=portPos(n.id,q),d=Math.hypot(pp.x-pt.x,pp.y-pt.y);
+        if(d<R&&d<bd){bd=d;best={nodeId:n.id,port:q};}
+      });
+    });
+  }
+  const prev=startSnap;
+  startSnap=best;
+  if(prev&&(!best||best.nodeId!==prev.nodeId)&&nodes[prev.nodeId]){
+    const n=nodes[prev.nodeId];
+    const inside=pt.x>=n.x&&pt.x<=n.x+n.w&&pt.y>=n.y&&pt.y<=n.y+n.h;
+    resetDots(prev.nodeId,inside);
+  }
+  if(best){
+    const n=nodes[best.nodeId];
+    Object.entries(n.portEls).forEach(([q,d])=>{
+      const on=q===best.port;
+      d.style.display='';
+      d.setAttribute('fill',on?'#E8503A':'#fff');d.setAttribute('stroke',on?'#E8503A':'#9CA3AF');d.setAttribute('r',on?8:5);
+    });
+  }
+}
+function beginConn(id,port){
+  startSnap=null;
+  conn={fromId:id,fromPort:port||null,hover:null};
+  previewLn.style.display='';
 }
 
 // ── Dragging an existing connector ───────────────────────────────────────────
@@ -1530,17 +1588,18 @@ function updateSnapHighlight(){
   Object.values(nodes).forEach(n=>{
     Object.entries(n.portEls).forEach(([p,dot])=>{
       const isSnap=snapPort&&n.id===snapPort.nodeId&&p===snapPort.port;
-      if(isSnap){dot.style.display='';dot.setAttribute('fill','#E8503A');dot.setAttribute('stroke','#E8503A');}
-      else if(n.id===conn?.fromId){}
-      else{dot.style.display='none';dot.setAttribute('fill','#fff');dot.setAttribute('stroke','#9CA3AF');}
+      const isSrc=conn&&n.id===conn.fromId&&p===(conn.fp||conn.fromPort);
+      dot.style.display='';                     // while connecting, every dot is a visible target
+      dot.setAttribute('fill',isSnap||isSrc?'#E8503A':'#fff');
+      dot.setAttribute('stroke',isSnap||isSrc?'#E8503A':'#9CA3AF');
+      dot.setAttribute('r',isSnap?8:(isSrc?6:5));
     });
   });
-  if(snapPort){const n=nodes[snapPort.nodeId];if(n)Object.values(n.portEls).forEach(d=>d.style.display='');}
 }
 
 function clearSnapHighlight(){
   Object.values(nodes).forEach(n=>{
-    Object.values(n.portEls).forEach(dot=>{dot.style.display='none';dot.setAttribute('fill','#fff');dot.setAttribute('stroke','#9CA3AF');});
+    Object.values(n.portEls).forEach(dot=>{dot.style.display='none';dot.setAttribute('fill','#fff');dot.setAttribute('stroke','#9CA3AF');dot.setAttribute('r',5);});
   });
 }
 
